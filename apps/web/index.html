@@ -7,152 +7,211 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <div class="app-shell">
-      <header class="topbar">
-        <div class="brand-lockup">
-          <div class="brand-mark">C</div>
-          <span>Creative Automation Engine</span>
-        </div>
+    <div class="air-workspace">
+      <header class="topbar" aria-label="Workspace header">
+        <button class="workspace-switcher" type="button" aria-label="Switch workspace">
+          <span class="workspace-avatar">A</span>
+          <span>Aniketh</span>
+          <span class="chevron">⌄</span>
+        </button>
+
+        <button class="global-search" type="button">
+          <span class="search-icon" aria-hidden="true"></span>
+          <span>Search Creative Automation Engine</span>
+          <kbd>⌘K</kbd>
+        </button>
+
         <div class="topbar-actions">
-          <button class="ghost-button" type="button">Preview</button>
-          <button class="ghost-button" type="button" id="shareTopButton">Share link</button>
-          <button class="menu-button" type="button" aria-label="Open menu">
-            <span></span>
-            <span></span>
-          </button>
+          <label class="air-button neutral" for="scriptFile">Upload a file</label>
+          <button class="air-button primary" id="shareTopButton" type="button">Create</button>
         </div>
       </header>
 
-      <main>
-        <section class="hero" aria-labelledby="page-title">
-          <div class="hero-copy">
-            <p class="label-pill">Creative Operations</p>
-            <h1 id="page-title">Script to creative canvas</h1>
-            <p class="hero-subtitle">
-              Upload a script. The engine keeps track, so you keep choosing.
-            </p>
-            <div class="hero-actions">
-              <label class="primary-button" for="scriptFile">Upload script</label>
-              <button class="ghost-button dark" type="button" id="parseButton">
-                Create canvas
-              </button>
-            </div>
+      <aside class="sidebar" aria-label="Primary navigation">
+        <section class="upgrade-card">
+          <div>
+            <p class="eyebrow">Level up your library</p>
+            <p>Automate storyboards, references, and moodboards from a single script.</p>
           </div>
-
-          <section class="editor-mock" aria-label="Creative canvas editor">
-            <div class="mock-titlebar">
-              <div class="mock-title-left">
-                <span class="app-dot"></span>
-                <strong>Untitled Canvas</strong>
-                <span>⌁</span>
-              </div>
-              <div class="mock-actions">
-                <button type="button">Smart parse</button>
-                <button type="button">Organize</button>
-                <button type="button">Generate</button>
-              </div>
-            </div>
-
-            <div class="mock-body">
-              <section class="script-card" aria-labelledby="intake-title">
-                <div class="panel-heading">
-                  <p class="eyebrow">Script</p>
-                  <h2 id="intake-title">Upload or paste script</h2>
-                </div>
-                <label class="dropzone" for="scriptFile">
-                  <input id="scriptFile" type="file" accept=".txt,.md" />
-                  <span class="drop-icon">↥</span>
-                  <span class="drop-title">Drop the script here</span>
-                </label>
-                <textarea id="scriptInput" spellcheck="false">
-A rainy evening in Kolkata. MAYA, a young ceramic artist, unlocks her studio after a long train ride. The room is filled with indigo clay vessels, wet windows, brass tools, and a flickering work lamp. Her brother ARJUN sends a voice note about their mother's old recipe notebook. Maya laughs, wipes rain from her face, and starts shaping a blue bowl as thunder rolls outside.</textarea>
-                <div class="intake-actions">
-                  <button class="ghost-button dark" type="button" id="resetButton">Reset</button>
-                </div>
-                <div class="agent-note">
-                  <span class="status-dot"></span>
-                  <p id="agentNote">
-                    <strong>Agent read:</strong> 2 characters, 4 scene beats, 5 visual dependencies,
-                    3 motion/audio cues.
-                  </p>
-                </div>
-              </section>
-
-              <section class="canvas-stage" aria-labelledby="canvas-title">
-                <div class="canvas-toolbar">
-                  <div>
-                    <p class="eyebrow">Canvas</p>
-                    <h2 id="canvas-title">Dependencies</h2>
-                  </div>
-                  <div class="segmented-control" aria-label="Canvas view">
-                    <button class="is-selected" type="button">Board</button>
-                    <button type="button">Timeline</button>
-                    <button type="button">QA</button>
-                  </div>
-                </div>
-                <div class="canvas-grid" id="dependencyCanvas"></div>
-              </section>
-            </div>
-          </section>
+          <button type="button">TRY IT OUT</button>
         </section>
 
-        <section class="blue-workflow" aria-labelledby="workflow-title">
-          <div class="workflow-heading">
-            <p class="small-caps">A Canvas built for <em>real</em> creative workflows.</p>
-            <h2 id="workflow-title">Select the work. The board organizes itself.</h2>
+        <nav class="nav-stack" aria-label="Workspace">
+          <a class="nav-row" href="#"><span class="nav-icon search"></span>Search</a>
+          <a class="nav-row" href="#"><span class="nav-icon bell"></span>Notifications</a>
+          <a class="nav-row" href="#"><span class="nav-icon people"></span>People</a>
+        </nav>
+
+        <nav class="nav-stack" aria-label="Library">
+          <a class="nav-row" href="#"><span class="nav-icon canvas"></span>Canvases</a>
+          <a class="nav-row" href="#"><span class="nav-icon context"></span>Context</a>
+          <a class="nav-row" href="#"><span class="nav-icon skills"></span>Skills</a>
+          <a class="nav-row" href="#"><span class="nav-icon showcase"></span>Showcases</a>
+          <a class="nav-row muted" href="#"><span class="nav-icon trash"></span>Recently deleted</a>
+        </nav>
+
+        <div class="sidebar-section">
+          <div class="section-label">Recent Canvases</div>
+          <a class="nav-row small" href="#">Script parsing flow</a>
+          <a class="nav-row small" href="#">Character lock board</a>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="section-label">Boards</div>
+          <a class="nav-row active small" href="#">Creative Automation Engine</a>
+          <a class="nav-row small" href="#">Moodboard Gen</a>
+        </div>
+      </aside>
+
+      <main class="board-shell">
+        <section class="board-panel" aria-labelledby="boardTitle">
+          <div class="board-toolbar">
+            <div class="breadcrumb">
+              <span class="board-dot"></span>
+              Creative Automation Engine
+            </div>
+            <div class="board-actions">
+              <button class="icon-button" type="button" aria-label="Favorite">☆</button>
+              <button class="icon-button" type="button" aria-label="Settings">⚙</button>
+              <button class="icon-button" type="button" aria-label="More">•••</button>
+            </div>
           </div>
 
-          <div class="workflow-layout">
-            <aside class="inspector" aria-labelledby="inspector-title">
-              <div class="panel-heading">
-                <p class="eyebrow">Selection</p>
-                <h2 id="inspector-title">Approved set</h2>
-              </div>
-              <div class="selection-summary">
-                <div>
-                  <span id="selectedCount">0</span>
-                  <p>dependencies</p>
-                </div>
-                <div>
-                  <span id="readyScore">42%</span>
-                  <p>ready</p>
-                </div>
-              </div>
-
-              <div class="selection-list" id="selectionList"></div>
-
-              <div class="export-panel">
-                <button class="primary-button wide" type="button" id="submitButton">
-                  Submit to generate moodboard
-                </button>
-                <div class="export-actions">
-                  <button class="ghost-button dark" type="button" id="downloadButton">
-                    Download
-                  </button>
-                  <button class="ghost-button dark" type="button" id="shareButton">
-                    Create share link
-                  </button>
-                </div>
-                <p id="shareLink" class="share-link" aria-live="polite"></p>
-              </div>
-            </aside>
-
-            <div class="moodboard-preview" id="moodboardPreview">
-              <div class="preview-header">
-                <span>End moodboard</span>
-                <span id="previewState">Draft</span>
-              </div>
-              <div class="preview-board">
-                <div class="preview-tile tile-large"></div>
-                <div class="preview-tile tile-brass"></div>
-                <div class="preview-tile tile-night"></div>
-                <div class="preview-tile tile-paper"></div>
-              </div>
-              <p id="moodboardCopy">
-                Pick the main character and scene references to unlock a generated board with
-                palette, props, transitions, and approval notes.
+          <div class="board-title-row">
+            <div>
+              <h1 id="boardTitle">Creative Automation Engine</h1>
+              <p>
+                Upload a script, choose character and scene dependencies, then generate the final
+                moodboard board.
               </p>
             </div>
+            <div class="collab-actions">
+              <button class="following-button" type="button">Following</button>
+              <button class="share-button" id="shareButton" type="button">Share</button>
+            </div>
+          </div>
+
+          <div class="tabs-row">
+            <div class="tabs" role="tablist" aria-label="Board sections">
+              <button class="tab active" type="button" role="tab" aria-selected="true">
+                Content
+              </button>
+              <button class="tab" type="button" role="tab" aria-selected="false">Canvases</button>
+            </div>
+            <div class="view-actions">
+              <button class="sort-button" type="button">Date modified</button>
+              <button class="icon-button" type="button" aria-label="Grid view">▦</button>
+              <button class="icon-button" type="button" aria-label="View settings">☰</button>
+            </div>
+          </div>
+
+          <div class="content-grid">
+            <section class="content-column">
+              <div class="section-heading">
+                <span>1 ASSET</span>
+              </div>
+
+              <article class="hero-asset">
+                <div class="asset-preview" aria-hidden="true">
+                  <div class="figure-card main">
+                    <div class="figure-head"></div>
+                    <div class="figure-body"></div>
+                    <div class="figure-shadow"></div>
+                  </div>
+                  <div class="swatch-strip">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                  <div class="scene-tiles">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </div>
+                <div class="asset-meta">
+                  <strong>Script dependency canvas</strong>
+                  <span id="previewState">Draft</span>
+                </div>
+              </article>
+
+              <section class="canvas-area">
+                <div class="canvas-heading">
+                  <div>
+                    <p class="eyebrow">Dependencies</p>
+                    <h2>Pick the locked references</h2>
+                  </div>
+                  <div class="selection-summary">
+                    <span><strong id="selectedCount">0</strong> selected</span>
+                    <span><strong id="readyScore">0%</strong> ready</span>
+                  </div>
+                </div>
+                <div id="dependencyCanvas" class="dependency-canvas" aria-live="polite"></div>
+              </section>
+            </section>
+
+            <aside class="inspector" aria-label="Workflow inspector">
+              <section class="inspector-card intake-card">
+                <div class="inspector-card-header">
+                  <div>
+                    <p class="eyebrow">01 Intake</p>
+                    <h2>Upload script</h2>
+                  </div>
+                  <span class="status-pill">Live</span>
+                </div>
+
+                <input id="scriptFile" type="file" accept=".txt,.md,.rtf" hidden />
+                <textarea id="scriptInput" rows="8">
+MAYA steps into the rain-glossed studio with an indigo apron and a brass key. Thunder folds into the train ambience. She shapes a blue bowl while her brother's voice note plays from an old phone beside a handwritten recipe notebook.</textarea>
+
+                <div class="agent-note" id="agentNote"></div>
+
+                <div class="intake-actions">
+                  <button class="air-button primary" id="parseButton" type="button">
+                    Analyze script
+                  </button>
+                  <button class="air-button neutral" id="resetButton" type="button">
+                    Clear picks
+                  </button>
+                </div>
+              </section>
+
+              <section class="inspector-card">
+                <div class="inspector-card-header">
+                  <div>
+                    <p class="eyebrow">02 Lock board</p>
+                    <h2>Selected items</h2>
+                  </div>
+                </div>
+                <div id="selectionList" class="selection-list"></div>
+              </section>
+
+              <section class="inspector-card moodboard-card">
+                <div class="moodboard-topline">
+                  <p class="eyebrow">03 Output</p>
+                  <span>Shareable</span>
+                </div>
+                <h2>End moodboard</h2>
+                <p id="moodboardCopy"></p>
+
+                <div class="point-animation" aria-hidden="true">
+                  <span style="--x: 16%; --y: 34%"></span>
+                  <span style="--x: 50%; --y: 22%"></span>
+                  <span style="--x: 78%; --y: 62%"></span>
+                </div>
+
+                <div class="export-actions">
+                  <button class="air-button primary" id="submitButton" type="button">
+                    Generate board
+                  </button>
+                  <button class="air-button neutral" id="downloadButton" type="button">
+                    Download
+                  </button>
+                </div>
+                <p class="share-link" id="shareLink" aria-live="polite"></p>
+              </section>
+            </aside>
           </div>
         </section>
       </main>
