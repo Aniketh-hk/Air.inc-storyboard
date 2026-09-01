@@ -1,0 +1,18 @@
+{
+  "id": "kolkata-homecoming-puja-v1",
+  "version": 1,
+  "location": "Kolkata",
+  "theme": "returning_to_hometown",
+  "home_definition": "Kolkata_not_family_house",
+  "opening": { "location": "Howrah Station", "treatment": "monochrome" },
+  "first_color": { "object": "yellow_ambassador_taxi" },
+  "middle_focus": ["tram", "rain", "chai", "architecture", "flowers", "puja_preparation"],
+  "brand_moments": ["dealer_sign", "painted_wall", "paint_bucket", "shade_display"],
+  "climax": { "location": "Durga_Puja_pandal", "treatment": "full_color" },
+  "audio": {
+    "dialogue": "prohibited",
+    "voiceover": "prohibited",
+    "music": "Bengali_classical",
+    "reference_feeling": "Rabindra_Sangeet_inspired"
+  }
+}

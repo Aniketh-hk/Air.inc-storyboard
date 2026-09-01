@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Creative Automation Engine</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand-lockup">
+          <div class="brand-mark">C</div>
+          <div>
+            <p class="eyebrow">Creative Automation Engine</p>
+            <h1>Script to Creative Canvas</h1>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button class="icon-button" type="button" aria-label="Open activity log">⌁</button>
+          <button class="ghost-button" type="button">Preview</button>
+          <button class="primary-button" type="button" id="shareTopButton">Share link</button>
+        </div>
+      </header>
+
+      <aside class="left-rail" aria-label="Workflow navigation">
+        <button class="rail-item is-active" type="button" aria-label="Script intake">⇪</button>
+        <button class="rail-item" type="button" aria-label="Characters">◐</button>
+        <button class="rail-item" type="button" aria-label="Scenes">▦</button>
+        <button class="rail-item" type="button" aria-label="Brand references">◇</button>
+        <button class="rail-item" type="button" aria-label="Motion and audio">≈</button>
+        <button class="rail-item" type="button" aria-label="Exports">⇩</button>
+      </aside>
+
+      <main class="workspace">
+        <section class="intake-panel" aria-labelledby="intake-title">
+          <div class="panel-heading">
+            <p class="eyebrow">Step 01</p>
+            <h2 id="intake-title">Upload or paste script</h2>
+          </div>
+          <label class="dropzone" for="scriptFile">
+            <input id="scriptFile" type="file" accept=".txt,.md" />
+            <span class="drop-icon">⇧</span>
+            <span class="drop-title">Drop the script here</span>
+            <span class="drop-note"
+              >The parser will extract characters, locations, props, moods, audio cues, and
+              transitions.</span
+            >
+          </label>
+          <textarea id="scriptInput" spellcheck="false">
+A rainy evening in Kolkata. MAYA, a young ceramic artist, unlocks her studio after a long train ride. The room is filled with indigo clay vessels, wet windows, brass tools, and a flickering work lamp. Her brother ARJUN sends a voice note about their mother's old recipe notebook. Maya laughs, wipes rain from her face, and starts shaping a blue bowl as thunder rolls outside.</textarea>
+          <div class="intake-actions">
+            <button class="primary-button" type="button" id="parseButton">Create canvas</button>
+            <button class="ghost-button" type="button" id="resetButton">Reset</button>
+          </div>
+          <div class="agent-note">
+            <span class="status-dot"></span>
+            <p id="agentNote">
+              <strong>Agent read:</strong> 2 characters, 4 scene beats, 5 visual dependencies, 3
+              motion/audio cues.
+            </p>
+          </div>
+        </section>
+
+        <section class="canvas-stage" aria-labelledby="canvas-title">
+          <div class="canvas-toolbar">
+            <div>
+              <p class="eyebrow">Step 02</p>
+              <h2 id="canvas-title">Dependency canvas</h2>
+            </div>
+            <div class="segmented-control" aria-label="Canvas view">
+              <button class="is-selected" type="button">Board</button>
+              <button type="button">Timeline</button>
+              <button type="button">QA</button>
+            </div>
+          </div>
+
+          <div class="flow-map" aria-label="Creative dependency workflow">
+            <div class="flow-node is-complete">Script</div>
+            <div class="flow-edge"></div>
+            <div class="flow-node is-active">Choices</div>
+            <div class="flow-edge"></div>
+            <div class="flow-node">Moodboard</div>
+            <div class="flow-edge"></div>
+            <div class="flow-node">Share</div>
+          </div>
+
+          <div class="canvas-grid" id="dependencyCanvas"></div>
+        </section>
+
+        <aside class="inspector" aria-labelledby="inspector-title">
+          <div class="panel-heading">
+            <p class="eyebrow">Step 03</p>
+            <h2 id="inspector-title">Selection set</h2>
+          </div>
+          <div class="selection-summary">
+            <div>
+              <span id="selectedCount">0</span>
+              <p>approved dependencies</p>
+            </div>
+            <div>
+              <span id="readyScore">42%</span>
+              <p>moodboard ready</p>
+            </div>
+          </div>
+
+          <div class="selection-list" id="selectionList"></div>
+
+          <div class="moodboard-preview" id="moodboardPreview">
+            <div class="preview-header">
+              <span>End moodboard</span>
+              <span id="previewState">Draft</span>
+            </div>
+            <div class="preview-board">
+              <div class="preview-tile tile-large"></div>
+              <div class="preview-tile tile-brass"></div>
+              <div class="preview-tile tile-night"></div>
+              <div class="preview-tile tile-paper"></div>
+            </div>
+            <p id="moodboardCopy">
+              Pick the main character and scene references to unlock a generated board with palette,
+              props, transitions, and approval notes.
+            </p>
+          </div>
+
+          <div class="export-panel">
+            <button class="primary-button wide" type="button" id="submitButton">
+              Submit to generate moodboard
+            </button>
+            <div class="export-actions">
+              <button class="ghost-button" type="button" id="downloadButton">Download</button>
+              <button class="ghost-button" type="button" id="shareButton">Create share link</button>
+            </div>
+            <p id="shareLink" class="share-link" aria-live="polite"></p>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <script src="./app.js" type="module"></script>
+  </body>
+</html>

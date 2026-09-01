@@ -1,0 +1,10 @@
+{
+  "name": "@creative-engine/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@creative-engine/schemas": "workspace:*",
+    "@creative-engine/validators": "workspace:*"
+  }
+}

@@ -1,0 +1,12 @@
+.DS_Store
+.env
+dist/
+node_modules/
+.pnpm-store/
+coverage/
+tmp/
+.next/
+*.log
+
+# Local object-storage and database volumes
+.data/

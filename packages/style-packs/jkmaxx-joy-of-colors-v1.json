@@ -1,0 +1,33 @@
+{
+  "id": "jkmaxx-joy-of-colors-v1",
+  "version": 1,
+  "visual_style": {
+    "cinematic": true,
+    "realistic_indian_environment": true,
+    "nostalgic": true,
+    "sensory_storytelling": true,
+    "heavy_broll": true,
+    "avoid_generic_ad_film": true
+  },
+  "color_journey": {
+    "opening": "monochrome",
+    "first_color": "yellow",
+    "progression": "selective_color",
+    "climax": "full_color"
+  },
+  "camera_language": {
+    "preferred": ["POV", "reflections", "inserts", "shallow_depth_of_field"],
+    "handheld": "subtle",
+    "avoid": ["extreme_ai_moves", "light_sweeps", "spin_transitions"]
+  },
+  "character_rules": {
+    "protagonist_count": 1,
+    "max_clear_face_seconds": 10,
+    "family": "prohibited"
+  },
+  "pacing": {
+    "broll_default_seconds": [0.8, 1.8],
+    "hero_shot_seconds": [2, 4]
+  },
+  "dialogue_default": null
+}

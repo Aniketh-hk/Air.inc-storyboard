@@ -1,0 +1,9 @@
+{
+  "name": "@creative-engine/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Creative Automation Engine workflow UI prototype",
+  "scripts": {
+    "dev": "python3 -m http.server 3000 -d ."
+  }
+}

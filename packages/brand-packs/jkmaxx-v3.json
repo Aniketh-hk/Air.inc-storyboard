@@ -1,0 +1,17 @@
+{
+  "id": "jkmaxx-v3",
+  "version": 3,
+  "brand_name": "JK MaxX Paints",
+  "logos": {
+    "primary_asset_id": "asset_logo_primary",
+    "min_clear_space_ratio": 0.08,
+    "never_regenerate_logo_with_ai": true
+  },
+  "product_assets": [{ "asset_id": "paint_bucket_01", "type": "packshot" }],
+  "brand_rules": [
+    "Brand must remain legible and undistorted",
+    "Prefer environmental integration before full packshot",
+    "Legal text is composited, never generated inside image"
+  ],
+  "forbidden": ["fake product claims", "distorted logo", "competitor branding"]
+}
