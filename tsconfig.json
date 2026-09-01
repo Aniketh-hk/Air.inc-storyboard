@@ -20,6 +20,7 @@
     "types": ["node", "vitest/globals"]
   },
   "include": [
+    "api/**/*.ts",
     "apps/**/*.ts",
     "apps/**/*.js",
     "packages/**/*.ts",

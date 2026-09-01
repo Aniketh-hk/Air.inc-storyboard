@@ -1,5 +1,25 @@
 # API roadmap
 
+## Current prototype endpoints
+
+These endpoints power the simplified Content → Canvas workflow. They are intentionally lightweight and
+mock-friendly so the UI can become useful before real model-provider credentials are wired in.
+
+| Method | Path                | Purpose                                                   |
+| ------ | ------------------- | --------------------------------------------------------- |
+| GET    | `/v1/health`        | Confirms the API process is reachable.                    |
+| POST   | `/v1/content/ideas` | Turns a knowledge dump plus connectors into script ideas. |
+| POST   | `/v1/canvas/expand` | Expands a selected idea into character and scene sheets.  |
+| POST   | `/v1/moodboards`    | Creates a moodboard export/share payload from selections. |
+
+The web app uses these endpoints when available and falls back to local generation when the API is offline.
+
+Run the API after a root build with:
+
+```bash
+pnpm --filter @creative-engine/api start
+```
+
 The V1 API will be implemented from Phase 2 onward under `/v1`.
 
 | Method | Path                                               | Planned phase |

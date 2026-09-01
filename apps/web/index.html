@@ -59,6 +59,7 @@
             <input id="connectorInput" type="text" placeholder="GPT, Gemini, 11 Labs..." />
             <button class="air-button neutral" id="addConnectorButton" type="button">Add</button>
           </div>
+          <p class="api-status" id="apiStatus">Backend: checking…</p>
         </section>
       </aside>
 
@@ -143,10 +144,19 @@ Paste brand notes, research links, audience context, product details, campaign g
           <section class="view-panel" id="canvasView" aria-labelledby="canvasTitle">
             <div class="canvas-layout">
               <aside class="asset-rail" aria-label="Canvas tools">
-                <button class="tool active" type="button">↖</button>
-                <button class="tool" type="button">▢</button>
-                <button class="tool" type="button">T</button>
-                <button class="tool" type="button">✦</button>
+                <button class="tool active" type="button" title="Select and move">↖</button>
+                <button class="tool" type="button" title="Add scene" data-add-sheet="scenes">
+                  ▢
+                </button>
+                <button class="tool" type="button" title="Add note" data-add-note>T</button>
+                <button
+                  class="tool"
+                  type="button"
+                  title="Add character"
+                  data-add-sheet="characters"
+                >
+                  ✦
+                </button>
               </aside>
 
               <section class="figma-board" aria-labelledby="canvasTitle">
@@ -169,28 +179,28 @@ Paste brand notes, research links, audience context, product details, campaign g
                     <path d="M810 340 C810 408 650 470 505 470" />
                   </svg>
 
-                  <article class="canvas-node idea-node">
+                  <article class="canvas-node idea-node" data-node-id="idea">
                     <p class="node-label">Selected idea</p>
                     <h3 id="selectedIdeaTitle">No idea selected yet</h3>
                     <p id="selectedIdeaBody">Choose an idea in Content and click Send to Canvas.</p>
                   </article>
 
-                  <article class="canvas-node character-node">
+                  <article class="canvas-node character-node" data-node-id="characters">
                     <p class="node-label">Character sheets</p>
                     <div class="option-grid" id="characterOptions"></div>
                   </article>
 
-                  <article class="canvas-node scene-node">
+                  <article class="canvas-node scene-node" data-node-id="scenes">
                     <p class="node-label">Scene sheets</p>
                     <div class="option-grid" id="sceneOptions"></div>
                   </article>
 
-                  <article class="canvas-node mix-node">
+                  <article class="canvas-node mix-node" data-node-id="mix">
                     <p class="node-label">Character + scene mix</p>
                     <div class="combo-grid" id="comboOptions"></div>
                   </article>
 
-                  <article class="canvas-node moodboard-node">
+                  <article class="canvas-node moodboard-node" data-node-id="moodboard">
                     <p class="node-label">Final moodboard</p>
                     <div class="moodboard-frame" id="moodboardFrame">
                       <span></span>

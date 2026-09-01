@@ -31,6 +31,16 @@ const baseIdeas = [
   },
 ];
 
+const currentUrl = new URL(globalThis.location.href);
+const defaultApiBase =
+  currentUrl.hostname === "localhost" || currentUrl.hostname === "127.0.0.1"
+    ? "http://localhost:8787"
+    : `${currentUrl.origin}/api`;
+const apiBaseUrl =
+  currentUrl.searchParams.get("api") ??
+  globalThis.localStorage?.getItem("cae_api_base") ??
+  defaultApiBase;
+
 const canvasState = {
   connectors: ["GPT", "Gemini", "11 Labs"],
   ideas: [...baseIdeas],
@@ -84,6 +94,31 @@ const canvasState = {
   ],
 };
 
+async function postJson(path, payload) {
+  const response = await globalThis.fetch(`${apiBaseUrl}${path}`, {
+    body: JSON.stringify(payload),
+    headers: {
+      "Content-Type": "application/json",
+    },
+    method: "POST",
+  });
+
+  if (!response.ok) {
+    throw new Error(`API request failed: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+async function checkApiHealth() {
+  try {
+    const response = await globalThis.fetch(`${apiBaseUrl}/v1/health`);
+    apiStatus.textContent = response.ok ? "Backend: connected" : "Backend: local fallback";
+  } catch {
+    apiStatus.textContent = "Backend: local fallback";
+  }
+}
+
 function getElement(selector) {
   const element = document.querySelector(selector);
   if (!element) {
@@ -114,6 +149,7 @@ const ideaCount = getElement("#ideaCount");
 const connectorInput = getElement("#connectorInput");
 const connectorList = getElement("#connectorList");
 const addConnectorButton = getElement("#addConnectorButton");
+const apiStatus = getElement("#apiStatus");
 const topSendButton = getElement("#topSendButton");
 const selectedIdeaTitle = getElement("#selectedIdeaTitle");
 const selectedIdeaBody = getElement("#selectedIdeaBody");
@@ -124,6 +160,7 @@ const moodboardFrame = getElement("#moodboardFrame");
 const chatLog = getElement("#chatLog");
 const chatInput = getElement("#chatInput");
 const shareLink = getElement("#shareLink");
+const flowCanvas = getElement(".flow-canvas");
 
 function getActiveIdea() {
   return (
@@ -251,12 +288,26 @@ function renderCanvas() {
   renderCombos();
 }
 
-function renderMoodboard() {
+async function renderMoodboard() {
   const activeIdea = getActiveIdea();
   const selectedCharacters = canvasState.characters.filter((option) => option.selected).length;
   const selectedScenes = canvasState.scenes.filter((option) => option.selected).length;
   moodboardFrame.classList.add("generated");
-  shareLink.textContent = `${activeIdea.title}: ${selectedCharacters} character direction${selectedCharacters === 1 ? "" : "s"}, ${selectedScenes} scene direction${selectedScenes === 1 ? "" : "s"}, visual board ready.`;
+  shareLink.textContent = "Generating moodboard payload…";
+
+  try {
+    const response = await postJson("/v1/moodboards", {
+      characters: canvasState.characters,
+      connectors: canvasState.connectors,
+      idea: activeIdea,
+      scenes: canvasState.scenes,
+    });
+    shareLink.textContent = `${response.share_url} — ${response.summary}`;
+    apiStatus.textContent = "Backend: connected";
+  } catch {
+    shareLink.textContent = `${activeIdea.title}: ${selectedCharacters} character direction${selectedCharacters === 1 ? "" : "s"}, ${selectedScenes} scene direction${selectedScenes === 1 ? "" : "s"}, visual board ready.`;
+    apiStatus.textContent = "Backend: local fallback";
+  }
 }
 
 function renderAll() {
@@ -277,9 +328,17 @@ function selectIdea(ideaId) {
   renderAll();
 }
 
-function sendIdeaToCanvas(ideaId) {
+async function sendIdeaToCanvas(ideaId) {
   selectIdea(ideaId);
   const activeIdea = getActiveIdea();
+  try {
+    const expansion = await postJson("/v1/canvas/expand", { idea: activeIdea });
+    canvasState.characters = expansion.characters;
+    canvasState.scenes = expansion.scenes;
+    apiStatus.textContent = "Backend: connected";
+  } catch {
+    apiStatus.textContent = "Backend: local fallback";
+  }
   canvasState.chat.push({
     role: "assistant",
     text: `Moved “${activeIdea.title}” into Canvas. I created starter character and scene sheets from the idea.`,
@@ -288,53 +347,67 @@ function sendIdeaToCanvas(ideaId) {
   renderAll();
 }
 
-function createIdeasFromKnowledge() {
+async function createIdeasFromKnowledge() {
   const source = knowledgeInput.value.trim();
   const compactSource = source.replace(/\s+/g, " ");
   const subject = compactSource.split(/[.?!]/)[0]?.slice(0, 96) || "the product story";
   const timestamp = Date.now();
 
-  canvasState.ideas = [
-    {
-      id: `idea-proof-${timestamp}`,
-      title: "Proof-first explainer",
-      hook: `Turn “${subject}” into a direct problem → proof → transformation script.`,
-      script: `Open with the sharpest audience pain from the knowledge dump. Show the old way for three seconds, introduce the new system, then land on one proof point and one emotional benefit.`,
-      tone: "simple, confident",
-      open: true,
-      selected: true,
-    },
-    {
-      id: `idea-documentary-${timestamp}`,
-      title: "Mini documentary arc",
-      hook: "Use the research as a world-building layer, then follow one person through the change.",
-      script:
-        "Start with context and tension. Cut to a protagonist navigating the problem. Use details from the research as visual proof, then close with the new workflow feeling calm and inevitable.",
-      tone: "human, premium",
-      open: false,
-      selected: false,
-    },
-    {
-      id: `idea-ugc-${timestamp}`,
-      title: "Creator demo with fast hooks",
-      hook: "Make the idea understandable in the first five seconds with a direct creator-led demo.",
-      script:
-        "A creator says the before-state out loud, shows the single action that changes everything, and moves through three quick proof beats before a clean CTA.",
-      tone: "fast, social",
-      open: false,
-      selected: false,
-    },
-    {
-      id: `idea-cinematic-${timestamp}`,
-      title: "Cinematic mood piece",
-      hook: "Let the visuals carry the emotional value while the script stays minimal.",
-      script:
-        "Use sparse copy, strong transitions, and repeating motifs from the knowledge dump. Build from raw materials to a finished board, ending on the clearest product promise.",
-      tone: "visual, atmospheric",
-      open: false,
-      selected: false,
-    },
-  ];
+  try {
+    const response = await postJson("/v1/content/ideas", {
+      connectors: canvasState.connectors,
+      knowledge: source,
+    });
+    canvasState.ideas = response.ideas.map((idea, index) => ({
+      ...idea,
+      open: index === 0,
+      selected: index === 0,
+    }));
+    apiStatus.textContent = "Backend: connected";
+  } catch {
+    canvasState.ideas = [
+      {
+        id: `idea-proof-${timestamp}`,
+        title: "Proof-first explainer",
+        hook: `Turn “${subject}” into a direct problem → proof → transformation script.`,
+        script: `Open with the sharpest audience pain from the knowledge dump. Show the old way for three seconds, introduce the new system, then land on one proof point and one emotional benefit.`,
+        tone: "simple, confident",
+        open: true,
+        selected: true,
+      },
+      {
+        id: `idea-documentary-${timestamp}`,
+        title: "Mini documentary arc",
+        hook: "Use the research as a world-building layer, then follow one person through the change.",
+        script:
+          "Start with context and tension. Cut to a protagonist navigating the problem. Use details from the research as visual proof, then close with the new workflow feeling calm and inevitable.",
+        tone: "human, premium",
+        open: false,
+        selected: false,
+      },
+      {
+        id: `idea-ugc-${timestamp}`,
+        title: "Creator demo with fast hooks",
+        hook: "Make the idea understandable in the first five seconds with a direct creator-led demo.",
+        script:
+          "A creator says the before-state out loud, shows the single action that changes everything, and moves through three quick proof beats before a clean CTA.",
+        tone: "fast, social",
+        open: false,
+        selected: false,
+      },
+      {
+        id: `idea-cinematic-${timestamp}`,
+        title: "Cinematic mood piece",
+        hook: "Let the visuals carry the emotional value while the script stays minimal.",
+        script:
+          "Use sparse copy, strong transitions, and repeating motifs from the knowledge dump. Build from raw materials to a finished board, ending on the clearest product promise.",
+        tone: "visual, atmospheric",
+        open: false,
+        selected: false,
+      },
+    ];
+    apiStatus.textContent = "Backend: local fallback";
+  }
   canvasState.activeIdeaId = canvasState.ideas[0].id;
   canvasState.chat.push({
     role: "assistant",
@@ -354,12 +427,14 @@ researchFile.addEventListener("change", () => {
   const reader = new FileReader();
   reader.addEventListener("load", () => {
     knowledgeInput.value = String(reader.result ?? "");
-    createIdeasFromKnowledge();
+    void createIdeasFromKnowledge();
   });
   reader.readAsText(file);
 });
 
-generateIdeasButton.addEventListener("click", createIdeasFromKnowledge);
+generateIdeasButton.addEventListener("click", () => {
+  void createIdeasFromKnowledge();
+});
 
 clearKnowledgeButton.addEventListener("click", () => {
   knowledgeInput.value = "";
@@ -388,7 +463,7 @@ ideaList.addEventListener("click", (event) => {
   }
 
   if (sendButton) {
-    sendIdeaToCanvas(sendButton.dataset.sendIdea);
+    void sendIdeaToCanvas(sendButton.dataset.sendIdea);
   }
 });
 
@@ -428,7 +503,9 @@ connectorList.addEventListener("click", (event) => {
   renderConnectors();
 });
 
-topSendButton.addEventListener("click", () => sendIdeaToCanvas(canvasState.activeIdeaId));
+topSendButton.addEventListener("click", () => {
+  void sendIdeaToCanvas(canvasState.activeIdeaId);
+});
 
 document.querySelector(".figma-board").addEventListener("click", (event) => {
   const optionButton = event.target.closest("[data-sheet-type]");
@@ -441,7 +518,79 @@ document.querySelector(".figma-board").addEventListener("click", (event) => {
   renderCanvas();
 });
 
-getElement("#generateMoodboardButton").addEventListener("click", renderMoodboard);
+function createSheet(type) {
+  const collection = canvasState[type];
+  const count = collection.length + 1;
+  collection.push({
+    detail:
+      type === "characters"
+        ? "New character direction added from the canvas."
+        : "New scene direction added from the canvas.",
+    id: `${type}-${Date.now()}`,
+    selected: true,
+    title: type === "characters" ? `Character option ${count}` : `Scene option ${count}`,
+  });
+  renderCanvas();
+}
+
+document.querySelectorAll("[data-add-sheet]").forEach((button) => {
+  button.addEventListener("click", () => createSheet(button.dataset.addSheet));
+});
+
+getElement("[data-add-note]").addEventListener("click", () => {
+  const note = document.createElement("article");
+  note.className = "canvas-node sticky-node";
+  note.dataset.nodeId = `note-${Date.now()}`;
+  note.style.left = "120px";
+  note.style.top = "410px";
+  note.innerHTML = `
+    <p class="node-label">Note</p>
+    <h3>Creative note</h3>
+    <p>Drag me anywhere on the canvas.</p>
+  `;
+  flowCanvas.append(note);
+});
+
+function startNodeDrag(event) {
+  const node = event.target.closest(".canvas-node");
+  if (!node || event.target.closest("button, input, textarea")) return;
+
+  const canvasRect = flowCanvas.getBoundingClientRect();
+  const nodeRect = node.getBoundingClientRect();
+  const offsetX = event.clientX - nodeRect.left;
+  const offsetY = event.clientY - nodeRect.top;
+
+  node.classList.add("dragging");
+  node.style.right = "auto";
+  node.style.bottom = "auto";
+  node.style.left = `${nodeRect.left - canvasRect.left + flowCanvas.scrollLeft}px`;
+  node.style.top = `${nodeRect.top - canvasRect.top + flowCanvas.scrollTop}px`;
+  node.setPointerCapture(event.pointerId);
+
+  function moveNode(moveEvent) {
+    const nextLeft = moveEvent.clientX - canvasRect.left + flowCanvas.scrollLeft - offsetX;
+    const nextTop = moveEvent.clientY - canvasRect.top + flowCanvas.scrollTop - offsetY;
+    node.style.left = `${Math.max(12, nextLeft)}px`;
+    node.style.top = `${Math.max(12, nextTop)}px`;
+  }
+
+  function stopDrag() {
+    node.classList.remove("dragging");
+    node.removeEventListener("pointermove", moveNode);
+    node.removeEventListener("pointerup", stopDrag);
+    node.removeEventListener("pointercancel", stopDrag);
+  }
+
+  node.addEventListener("pointermove", moveNode);
+  node.addEventListener("pointerup", stopDrag);
+  node.addEventListener("pointercancel", stopDrag);
+}
+
+flowCanvas.addEventListener("pointerdown", startNodeDrag);
+
+getElement("#generateMoodboardButton").addEventListener("click", () => {
+  void renderMoodboard();
+});
 
 getElement("#downloadBoardButton").addEventListener("click", () => {
   const payload = {
@@ -491,3 +640,4 @@ chatInput.addEventListener("keydown", (event) => {
 });
 
 renderAll();
+void checkApiHealth();
