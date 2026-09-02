@@ -138,12 +138,12 @@ async function postJson(path, payload) {
 async function checkApiHealth() {
   try {
     const response = await globalThis.fetch(`${apiBaseUrl}/v1/health`);
-    apiStatus.textContent = response.ok ? "Backend: connected" : "Backend: local fallback";
+    apiStatus.textContent = response.ok ? "System: connected" : "System: local draft mode";
     if (response.ok) {
       await hydrateConnectorCatalog();
     }
   } catch {
-    apiStatus.textContent = "Backend: local fallback";
+    apiStatus.textContent = "System: local draft mode";
   }
 }
 
@@ -438,10 +438,10 @@ async function renderMoodboard() {
       scenes: canvasState.scenes,
     });
     shareLink.textContent = `${response.share_url} — ${response.summary}`;
-    apiStatus.textContent = "Backend: connected";
+    apiStatus.textContent = "System: connected";
   } catch {
     shareLink.textContent = `${activeIdea.title}: ${selectedCharacters} character direction${selectedCharacters === 1 ? "" : "s"}, ${selectedScenes} scene direction${selectedScenes === 1 ? "" : "s"}, visual board ready.`;
-    apiStatus.textContent = "Backend: local fallback";
+    apiStatus.textContent = "System: local draft mode";
   }
 }
 
@@ -475,9 +475,9 @@ async function sendIdeaToCanvas(ideaId) {
     const expansion = await postJson("/v1/canvas/expand", { idea: activeIdea });
     canvasState.characters = expansion.characters;
     canvasState.scenes = expansion.scenes;
-    apiStatus.textContent = "Backend: connected";
+    apiStatus.textContent = "System: connected";
   } catch {
-    apiStatus.textContent = "Backend: local fallback";
+    apiStatus.textContent = "System: local draft mode";
   }
   canvasState.chat.push({
     role: "assistant",
@@ -506,7 +506,7 @@ async function createIdeasFromKnowledge() {
       open: index === 0,
       selected: index === 0,
     }));
-    apiStatus.textContent = "Backend: connected";
+    apiStatus.textContent = "System: connected";
   } catch {
     canvasState.ideas = [
       {
@@ -549,7 +549,7 @@ async function createIdeasFromKnowledge() {
         selected: false,
       },
     ];
-    apiStatus.textContent = "Backend: local fallback";
+    apiStatus.textContent = "System: local draft mode";
   }
   canvasState.activeIdeaId = canvasState.ideas[0].id;
   canvasState.compareIds = [canvasState.ideas[0].id];
@@ -567,7 +567,7 @@ async function understandKnowledge() {
       links: canvasState.links,
     });
     canvasState.understanding = response.understanding;
-    apiStatus.textContent = "Backend: connected";
+    apiStatus.textContent = "System: connected";
   } catch {
     const compact = knowledgeInput.value.replace(/\s+/g, " ").trim();
     canvasState.understanding = {
@@ -578,7 +578,7 @@ async function understandKnowledge() {
           ? `Local read: ${compact.slice(0, 180)}${compact.length > 180 ? "…" : ""}`
           : canvasState.understanding.summary,
     };
-    apiStatus.textContent = "Backend: local fallback";
+    apiStatus.textContent = "System: local draft mode";
   }
   renderResearchInsights();
 }
@@ -859,10 +859,10 @@ assetFile.addEventListener("change", async () => {
           source: "upload",
           tags: ["asset", file.type || "file"],
         });
-        apiStatus.textContent = "Backend: connected";
+        apiStatus.textContent = "System: connected";
         return payload.asset;
       } catch {
-        apiStatus.textContent = "Backend: local fallback";
+        apiStatus.textContent = "System: local draft mode";
         return {
           asset_id: `asset-${Date.now()}-${file.name}`,
           kind: file.type.startsWith("audio/") ? "audio" : "reference",
@@ -888,10 +888,10 @@ getElement("#saveProjectButton").addEventListener("click", async () => {
       project_id: canvasState.projectId,
     });
     projectStatus.textContent = `Saved ${new Date(payload.project.saved_at).toLocaleTimeString()}`;
-    apiStatus.textContent = "Backend: connected";
+    apiStatus.textContent = "System: connected";
   } catch {
     projectStatus.textContent = `Saved locally ${new Date().toLocaleTimeString()}`;
-    apiStatus.textContent = "Backend: local fallback";
+    apiStatus.textContent = "System: local draft mode";
   }
 });
 
@@ -902,10 +902,10 @@ getElement("#exportPackageButton").addEventListener("click", async () => {
       formats: ["json", "pdf", "png", "pptx", "figma"],
     });
     projectStatus.textContent = `Export ready: ${payload.export.formats.join(", ")}`;
-    apiStatus.textContent = "Backend: connected";
+    apiStatus.textContent = "System: connected";
   } catch {
     projectStatus.textContent = "Export ready locally: JSON, PDF, PNG, PPTX, Figma";
-    apiStatus.textContent = "Backend: local fallback";
+    apiStatus.textContent = "System: local draft mode";
   }
 });
 

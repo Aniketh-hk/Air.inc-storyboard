@@ -336,12 +336,35 @@ kbd {
   background: currentcolor;
 }
 
-.connector-card {
+.system-card {
   padding: 14px;
   border: 1px solid var(--line-soft);
   border-radius: var(--radius-md);
   background: var(--surface);
   box-shadow: 0 1px 1px rgb(0 0 0 / 3%);
+}
+
+.system-copy {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.system-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 30px;
+  border-top: 1px solid var(--line-soft);
+  color: var(--faint);
+  font-size: 12px;
+}
+
+.system-status strong {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 760;
 }
 
 .card-heading {

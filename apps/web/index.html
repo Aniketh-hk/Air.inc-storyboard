@@ -49,18 +49,30 @@
           </button>
         </nav>
 
-        <section class="connector-card" aria-labelledby="connectorTitle">
+        <section class="system-card" aria-labelledby="systemTitle">
           <div class="card-heading">
-            <p class="eyebrow">Connectors</p>
-            <h2 id="connectorTitle">Model + media stack</h2>
+            <p class="eyebrow">System</p>
+            <h2 id="systemTitle">Workspace status</h2>
           </div>
-          <div class="connector-list" id="connectorList" aria-live="polite"></div>
-          <div class="connector-catalog" id="connectorCatalog" aria-live="polite"></div>
-          <div class="connector-input">
+          <p class="system-copy">
+            Build from research to script ideas, then move the selected direction into Canvas.
+          </p>
+          <div class="system-status">
+            <span>Content</span>
+            <strong>Ready</strong>
+          </div>
+          <div class="system-status">
+            <span>Canvas</span>
+            <strong>Ready</strong>
+          </div>
+          <p class="api-status" id="apiStatus">System: checking…</p>
+
+          <div class="backend-connectors" hidden aria-hidden="true">
+            <div class="connector-list" id="connectorList" aria-live="polite"></div>
+            <div class="connector-catalog" id="connectorCatalog" aria-live="polite"></div>
             <input id="connectorInput" type="text" placeholder="GPT, Gemini, 11 Labs..." />
             <button class="air-button neutral" id="addConnectorButton" type="button">Add</button>
           </div>
-          <p class="api-status" id="apiStatus">Backend: checking…</p>
         </section>
       </aside>
 
@@ -296,6 +308,6 @@ Paste brand notes, research links, audience context, product details, campaign g
       </main>
     </div>
 
-    <script src="./app.js?v=20260902-neat-canvas" type="module"></script>
+    <script src="./app.js?v=20260902-system-sidebar" type="module"></script>
   </body>
 </html>
