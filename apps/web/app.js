@@ -54,9 +54,16 @@ const canvasState = {
   connectors: ["GPT"],
   connectorCatalog: [],
   compareIds: ["idea-founder-proof"],
-  ideas: [...baseIdeas],
+  contentMessages: [
+    {
+      role: "assistant",
+      text: "Drop a website or rough idea here. I’ll research it, pull useful samples, and turn it into script directions you can send to Canvas.",
+    },
+  ],
+  ideas: [],
   activeIdeaId: "idea-founder-proof",
   activeView: "content",
+  lastContentPrompt: "",
   projectId: "creative-engine-demo",
   researchPack: {
     input: "",
@@ -187,6 +194,7 @@ const researchInsights = getElement("#researchInsights");
 const researchStatus = getElement("#researchStatus");
 const sampleCount = getElement("#sampleCount");
 const sampleList = getElement("#sampleList");
+const contentChatLog = getElement("#contentChatLog");
 const connectorInput = getElement("#connectorInput");
 const connectorList = getElement("#connectorList");
 const connectorCatalog = getElement("#connectorCatalog");
@@ -210,7 +218,9 @@ const projectStatus = getElement("#projectStatus");
 
 function getActiveIdea() {
   return (
-    canvasState.ideas.find((idea) => idea.id === canvasState.activeIdeaId) ?? canvasState.ideas[0]
+    canvasState.ideas.find((idea) => idea.id === canvasState.activeIdeaId) ??
+    canvasState.ideas[0] ??
+    baseIdeas[0]
   );
 }
 
@@ -278,7 +288,7 @@ function renderResearchInsights() {
 
 function renderSamples() {
   const samples = canvasState.researchPack.samples ?? [];
-  sampleCount.textContent = `${samples.length} samples`;
+  sampleCount.textContent = String(samples.length);
   sampleList.innerHTML =
     samples.length > 0
       ? samples
@@ -301,11 +311,27 @@ function renderSamples() {
       : `<div class="empty-state">Research a website or idea to pull script-ready samples.</div>`;
 }
 
+function renderContentChat() {
+  contentChatLog.innerHTML = canvasState.contentMessages
+    .map(
+      (message) => `
+        <div class="content-message ${escapeHtml(message.role)}">
+          <span>${message.role === "assistant" ? "Content" : "You"}</span>
+          <p>${escapeHtml(message.text)}</p>
+        </div>
+      `,
+    )
+    .join("");
+  contentChatLog.scrollTop = contentChatLog.scrollHeight;
+}
+
 function renderIdeas() {
   ideaCount.textContent = `${canvasState.ideas.length} ideas`;
-  ideaList.innerHTML = canvasState.ideas
-    .map(
-      (idea) => `
+  ideaList.innerHTML =
+    canvasState.ideas.length > 0
+      ? canvasState.ideas
+          .map(
+            (idea) => `
         <article class="idea-card ${idea.selected ? "selected" : ""}" data-idea-id="${escapeHtml(idea.id)}">
           <div class="idea-card-top">
             <div>
@@ -332,8 +358,9 @@ function renderIdeas() {
           }
         </article>
       `,
-    )
-    .join("");
+          )
+          .join("")
+      : `<div class="empty-state">Generated script directions will appear here after you research a source.</div>`;
 }
 
 function renderComparison() {
@@ -465,6 +492,7 @@ function renderAll() {
   renderConnectors();
   renderResearchInsights();
   renderSamples();
+  renderContentChat();
   renderIdeas();
   renderComparison();
   renderCanvas();
@@ -515,6 +543,8 @@ async function createIdeasFromKnowledge() {
   }
 
   researchStatus.textContent = "Generating scripts from research…";
+  syncContentPrompt(source);
+  renderContentChat();
 
   try {
     const response = await postJson("/v1/content/scripts", {
@@ -538,6 +568,10 @@ async function createIdeasFromKnowledge() {
       response.provider === "gpt"
         ? "Scripts generated with GPT from pulled samples."
         : "Scripts generated in local draft mode from pulled samples.";
+    canvasState.contentMessages.push({
+      role: "assistant",
+      text: `Generated ${canvasState.ideas.length} script directions from the current research. Open a card below to edit it, or send the strongest one to Canvas.`,
+    });
   } catch {
     canvasState.researchPack = createLocalResearchPack(source);
     canvasState.understanding = canvasState.researchPack.understanding;
@@ -584,6 +618,10 @@ async function createIdeasFromKnowledge() {
     ];
     apiStatus.textContent = "System: local draft mode";
     researchStatus.textContent = "Scripts generated locally from the idea.";
+    canvasState.contentMessages.push({
+      role: "assistant",
+      text: "Generated local draft scripts from the source. These are ready to edit while GPT credentials or network access are unavailable.",
+    });
   }
   canvasState.activeIdeaId = canvasState.ideas[0].id;
   canvasState.compareIds = [canvasState.ideas[0].id];
@@ -644,6 +682,15 @@ function looksLikeWebsiteSource(source) {
   return /^https?:\/\//i.test(trimmed) || (!trimmed.includes(" ") && trimmed.includes("."));
 }
 
+function syncContentPrompt(source) {
+  if (!source || canvasState.lastContentPrompt === source) return;
+  canvasState.contentMessages.push({
+    role: "user",
+    text: source,
+  });
+  canvasState.lastContentPrompt = source;
+}
+
 async function researchSource() {
   const source = knowledgeInput.value.trim();
   if (!source) {
@@ -654,6 +701,8 @@ async function researchSource() {
   researchStatus.textContent = looksLikeWebsiteSource(source)
     ? "Pulling website samples…"
     : "Building research samples from idea…";
+  syncContentPrompt(source);
+  renderContentChat();
 
   try {
     const response = await postJson("/v1/content/research", {
@@ -663,16 +712,26 @@ async function researchSource() {
     canvasState.understanding = response.research.understanding;
     apiStatus.textContent = "System: connected";
     researchStatus.textContent = `${response.research.samples.length} samples pulled from ${response.research.mode}.`;
+    canvasState.contentMessages.push({
+      role: "assistant",
+      text: `Pulled ${response.research.samples.length} research samples and updated the summary. Next: generate script directions from this source.`,
+    });
     renderResearchInsights();
     renderSamples();
+    renderContentChat();
     return response.research;
   } catch {
     canvasState.researchPack = createLocalResearchPack(source);
     canvasState.understanding = canvasState.researchPack.understanding;
     apiStatus.textContent = "System: local draft mode";
     researchStatus.textContent = `${canvasState.researchPack.samples.length} local samples created.`;
+    canvasState.contentMessages.push({
+      role: "assistant",
+      text: "Created local research samples from the source. Generate scripts when you’re ready.",
+    });
     renderResearchInsights();
     renderSamples();
+    renderContentChat();
     return canvasState.researchPack;
   }
 }
@@ -715,9 +774,16 @@ generateIdeasButton.addEventListener("click", () => {
 
 clearKnowledgeButton.addEventListener("click", () => {
   knowledgeInput.value = "";
-  canvasState.ideas = [...baseIdeas];
+  canvasState.ideas = [];
   canvasState.activeIdeaId = "idea-founder-proof";
   canvasState.compareIds = ["idea-founder-proof"];
+  canvasState.contentMessages = [
+    {
+      role: "assistant",
+      text: "Cleared the content room. Paste a new website or idea and I’ll build fresh research and scripts.",
+    },
+  ];
+  canvasState.lastContentPrompt = "";
   canvasState.researchPack = createLocalResearchPack("");
   canvasState.researchPack.samples = [];
   canvasState.understanding = canvasState.researchPack.understanding;

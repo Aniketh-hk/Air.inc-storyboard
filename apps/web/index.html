@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Creative Automation Engine</title>
-    <link rel="stylesheet" href="./styles.css?v=20260902-content-builder" />
+    <link rel="stylesheet" href="./styles.css?v=20260902-chat-content" />
   </head>
   <body>
     <div class="air-workspace">
@@ -102,92 +102,89 @@
             </div>
           </div>
 
-          <div class="tabs-row">
-            <div class="tabs" role="tablist" aria-label="Board sections">
-              <button
-                class="tab active"
-                type="button"
-                role="tab"
-                aria-selected="true"
-                data-view="content"
-              >
-                Content
-              </button>
-              <button class="tab" type="button" role="tab" aria-selected="false" data-view="canvas">
-                Canvas
-              </button>
-            </div>
-          </div>
-
           <section class="view-panel active" id="contentView" aria-labelledby="contentTitle">
-            <div class="content-layout">
-              <section class="knowledge-panel">
-                <div class="section-heading">
-                  <p class="eyebrow">01 Source</p>
-                  <h2 id="contentTitle">Website or idea</h2>
-                </div>
+            <div class="content-studio">
+              <aside class="content-sidepanel" aria-label="Content research context">
+                <section class="content-brief-card">
+                  <p class="eyebrow">Content room</p>
+                  <h2>Research → Scripts</h2>
+                  <p>
+                    Add a website, raw idea, notes, or uploaded brief. The engine pulls useful
+                    signals first, then writes selectable script directions.
+                  </p>
+                  <p class="research-status" id="researchStatus">
+                    Ready for a website URL or raw idea.
+                  </p>
+                </section>
 
-                <input id="researchFile" type="file" accept=".txt,.md,.rtf" hidden />
-                <p class="source-hint">
-                  Paste a website URL or one rough idea. Content will pull samples, understand the
-                  positioning, and generate script directions.
-                </p>
-                <textarea
-                  id="knowledgeInput"
-                  rows="8"
-                  placeholder="https://brand.com or: an AI app that turns messy creative research into storyboard moodboards"
-                ></textarea>
-
-                <div class="knowledge-actions">
-                  <button class="air-button neutral" id="understandButton" type="button">
-                    Research source
-                  </button>
-                  <button class="air-button primary" id="generateIdeasButton" type="button">
-                    Generate scripts
-                  </button>
-                  <button class="air-button neutral" id="clearKnowledgeButton" type="button">
-                    Clear
-                  </button>
-                </div>
-                <p class="research-status" id="researchStatus">
-                  Ready for a website URL or raw idea.
-                </p>
-              </section>
-
-              <section class="understanding-panel" aria-labelledby="understandingTitle">
-                <div class="section-heading">
-                  <p class="eyebrow">02 Understanding</p>
-                  <h2 id="understandingTitle">Research summary</h2>
-                </div>
-                <div id="researchInsights" class="insight-grid" aria-live="polite"></div>
-              </section>
-
-              <section class="samples-panel" aria-labelledby="samplesTitle">
-                <div class="section-heading inline">
-                  <div>
-                    <p class="eyebrow">03 Samples</p>
-                    <h2 id="samplesTitle">Pulled references</h2>
+                <section class="samples-panel" aria-labelledby="samplesTitle">
+                  <div class="section-heading inline">
+                    <div>
+                      <p class="eyebrow">Samples</p>
+                      <h2 id="samplesTitle">Pulled references</h2>
+                    </div>
+                    <span class="counter" id="sampleCount">0</span>
                   </div>
-                  <span class="counter" id="sampleCount">0 samples</span>
-                </div>
-                <div id="sampleList" class="sample-list" aria-live="polite"></div>
-              </section>
+                  <div id="sampleList" class="sample-list" aria-live="polite"></div>
+                </section>
 
-              <section class="ideas-panel" aria-labelledby="ideasTitle">
-                <div class="section-heading inline">
-                  <div>
-                    <p class="eyebrow">04 Scripts</p>
-                    <h2 id="ideasTitle">Open, read, edit, select</h2>
+                <section class="understanding-panel" aria-labelledby="understandingTitle">
+                  <div class="section-heading">
+                    <p class="eyebrow">Understanding</p>
+                    <h2 id="understandingTitle">Research summary</h2>
                   </div>
-                  <span class="counter" id="ideaCount">0 ideas</span>
+                  <div id="researchInsights" class="insight-grid" aria-live="polite"></div>
+                </section>
+              </aside>
+
+              <section class="content-chat-panel" aria-labelledby="contentTitle">
+                <div class="content-chat-header">
+                  <div>
+                    <p class="eyebrow">Inference</p>
+                    <h2 id="contentTitle">Content assistant</h2>
+                  </div>
+                  <span class="status-pill">GPT base</span>
                 </div>
-                <div class="idea-list" id="ideaList" aria-live="polite"></div>
-                <div class="compare-tray">
-                  <div>
-                    <p class="eyebrow">Compare</p>
-                    <h2>Selected idea stack</h2>
+
+                <div class="content-chat-log" id="contentChatLog" aria-live="polite"></div>
+
+                <section class="ideas-panel" aria-labelledby="ideasTitle">
+                  <div class="section-heading inline">
+                    <div>
+                      <p class="eyebrow">Scripts</p>
+                      <h2 id="ideasTitle">Generated directions</h2>
+                    </div>
+                    <span class="counter" id="ideaCount">0 ideas</span>
                   </div>
-                  <div id="comparisonList" class="comparison-list" aria-live="polite"></div>
+                  <div class="idea-list" id="ideaList" aria-live="polite"></div>
+                  <div class="compare-tray" hidden aria-hidden="true">
+                    <div>
+                      <p class="eyebrow">Compare</p>
+                      <h2>Selected idea stack</h2>
+                    </div>
+                    <div id="comparisonList" class="comparison-list" aria-live="polite"></div>
+                  </div>
+                </section>
+
+                <div class="content-composer">
+                  <input id="researchFile" type="file" accept=".txt,.md,.rtf" hidden />
+                  <textarea
+                    id="knowledgeInput"
+                    rows="4"
+                    placeholder="Paste a website URL or rough idea… e.g. air.inc, vitra.ai, or “a founder tool that turns research into storyboard moodboards”"
+                  ></textarea>
+                  <div class="knowledge-actions">
+                    <label class="air-button neutral" for="researchFile">Upload</label>
+                    <button class="air-button neutral" id="understandButton" type="button">
+                      Research
+                    </button>
+                    <button class="air-button primary" id="generateIdeasButton" type="button">
+                      Generate scripts
+                    </button>
+                    <button class="air-button neutral" id="clearKnowledgeButton" type="button">
+                      Clear
+                    </button>
+                  </div>
                 </div>
               </section>
             </div>
@@ -318,6 +315,6 @@
       </main>
     </div>
 
-    <script src="./app.js?v=20260902-content-builder" type="module"></script>
+    <script src="./app.js?v=20260902-chat-content" type="module"></script>
   </body>
 </html>
