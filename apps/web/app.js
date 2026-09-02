@@ -42,10 +42,35 @@ const apiBaseUrl =
   defaultApiBase;
 
 const canvasState = {
+  assets: [
+    {
+      asset_id: "asset-brand-notes",
+      kind: "reference",
+      name: "Brand notes",
+      source: "seed",
+      tags: ["reference", "content"],
+    },
+  ],
   connectors: ["GPT", "Gemini", "11 Labs"],
+  connectorCatalog: [],
+  compareIds: ["idea-founder-proof"],
   ideas: [...baseIdeas],
   activeIdeaId: "idea-founder-proof",
   activeView: "content",
+  links: [],
+  projectId: "creative-engine-demo",
+  zoom: 1,
+  understanding: {
+    audience: ["creative team", "brand owner"],
+    constraints: ["Human approval before final generation"],
+    creative_angles: ["before/after workflow reveal", "creator demo"],
+    links: [],
+    product_truths: ["Knowledge becomes script ideas", "Selected ideas become visual boards"],
+    summary:
+      "Add research, notes, scripts, links, or brand context to unlock sharper creative understanding.",
+    themes: ["Creative clarity", "Workflow transformation"],
+    tone: ["simple", "premium", "cinematic"],
+  },
   characters: [
     {
       id: "creator",
@@ -114,6 +139,9 @@ async function checkApiHealth() {
   try {
     const response = await globalThis.fetch(`${apiBaseUrl}/v1/health`);
     apiStatus.textContent = response.ok ? "Backend: connected" : "Backend: local fallback";
+    if (response.ok) {
+      await hydrateConnectorCatalog();
+    }
   } catch {
     apiStatus.textContent = "Backend: local fallback";
   }
@@ -142,12 +170,19 @@ const tabs = [...document.querySelectorAll("[data-view]")];
 const canvasStatus = getElement("#canvasStatus");
 const knowledgeInput = getElement("#knowledgeInput");
 const researchFile = getElement("#researchFile");
+const researchLinkInput = getElement("#researchLinkInput");
+const addResearchLinkButton = getElement("#addResearchLinkButton");
+const researchLinkList = getElement("#researchLinkList");
+const understandButton = getElement("#understandButton");
 const generateIdeasButton = getElement("#generateIdeasButton");
 const clearKnowledgeButton = getElement("#clearKnowledgeButton");
 const ideaList = getElement("#ideaList");
 const ideaCount = getElement("#ideaCount");
+const comparisonList = getElement("#comparisonList");
+const researchInsights = getElement("#researchInsights");
 const connectorInput = getElement("#connectorInput");
 const connectorList = getElement("#connectorList");
+const connectorCatalog = getElement("#connectorCatalog");
 const addConnectorButton = getElement("#addConnectorButton");
 const apiStatus = getElement("#apiStatus");
 const topSendButton = getElement("#topSendButton");
@@ -161,6 +196,10 @@ const chatLog = getElement("#chatLog");
 const chatInput = getElement("#chatInput");
 const shareLink = getElement("#shareLink");
 const flowCanvas = getElement(".flow-canvas");
+const assetFile = getElement("#assetFile");
+const assetGrid = getElement("#assetGrid");
+const zoomLabel = getElement("#zoomLabel");
+const projectStatus = getElement("#projectStatus");
 
 function getActiveIdea() {
   return (
@@ -191,6 +230,59 @@ function renderConnectors() {
       `,
     )
     .join("");
+
+  connectorCatalog.innerHTML = canvasState.connectorCatalog
+    .filter((connector) => !canvasState.connectors.includes(connector.name))
+    .slice(0, 5)
+    .map(
+      (connector) => `
+        <button class="catalog-pill" type="button" data-add-catalog-connector="${escapeHtml(connector.name)}">
+          ${escapeHtml(connector.name)}
+          <span>${escapeHtml(connector.role)}</span>
+        </button>
+      `,
+    )
+    .join("");
+}
+
+function renderLinks() {
+  researchLinkList.innerHTML =
+    canvasState.links.length > 0
+      ? canvasState.links
+          .map(
+            (link) => `
+              <button class="link-chip" type="button" data-remove-link="${escapeHtml(link)}">
+                ${escapeHtml(link)}
+                <span>×</span>
+              </button>
+            `,
+          )
+          .join("")
+      : `<span class="empty-inline">No research links yet.</span>`;
+}
+
+function renderResearchInsights() {
+  const understanding = canvasState.understanding;
+  const rows = [
+    ["Summary", [understanding.summary]],
+    ["Themes", understanding.themes],
+    ["Audience", understanding.audience],
+    ["Constraints", understanding.constraints],
+    ["Product truths", understanding.product_truths],
+    ["Creative angles", understanding.creative_angles],
+    ["Tone", understanding.tone],
+  ];
+
+  researchInsights.innerHTML = rows
+    .map(
+      ([label, values]) => `
+        <article class="insight-card">
+          <strong>${escapeHtml(label)}</strong>
+          <p>${values.map((value) => escapeHtml(value)).join(" · ")}</p>
+        </article>
+      `,
+    )
+    .join("");
 }
 
 function renderIdeas() {
@@ -215,6 +307,8 @@ function renderIdeas() {
                 <textarea class="idea-editor" data-edit-idea="${escapeHtml(idea.id)}">${escapeHtml(idea.script)}</textarea>
                 <div class="idea-actions">
                   <button class="air-button neutral" type="button" data-select-idea="${escapeHtml(idea.id)}">Select</button>
+                  <button class="air-button neutral" type="button" data-compare-idea="${escapeHtml(idea.id)}">Compare</button>
+                  <button class="air-button neutral" type="button" data-duplicate-idea="${escapeHtml(idea.id)}">Duplicate</button>
                   <button class="air-button primary" type="button" data-send-idea="${escapeHtml(idea.id)}">Send to Canvas</button>
                 </div>
               `
@@ -224,6 +318,24 @@ function renderIdeas() {
       `,
     )
     .join("");
+}
+
+function renderComparison() {
+  const ideas = canvasState.ideas.filter((idea) => canvasState.compareIds.includes(idea.id));
+  comparisonList.innerHTML =
+    ideas.length > 0
+      ? ideas
+          .map(
+            (idea) => `
+              <article class="comparison-card">
+                <strong>${escapeHtml(idea.title)}</strong>
+                <span>${escapeHtml(idea.tone)}</span>
+                <p>${escapeHtml(idea.hook)}</p>
+              </article>
+            `,
+          )
+          .join("")
+      : `<div class="empty-state">Add ideas to compare hooks, tone, and story shape.</div>`;
 }
 
 function renderChat() {
@@ -288,6 +400,29 @@ function renderCanvas() {
   renderCombos();
 }
 
+function renderAssets() {
+  assetGrid.innerHTML =
+    canvasState.assets.length > 0
+      ? canvasState.assets
+          .map(
+            (asset) => `
+              <article class="asset-card">
+                <span class="asset-thumb ${escapeHtml(asset.kind)}"></span>
+                <strong>${escapeHtml(asset.name)}</strong>
+                <small>${escapeHtml(asset.tags.join(" · "))}</small>
+              </article>
+            `,
+          )
+          .join("")
+      : `<div class="empty-state">Upload brand assets, reference images, audio, or scene material.</div>`;
+}
+
+function renderZoom() {
+  flowCanvas.style.transform = `scale(${canvasState.zoom})`;
+  flowCanvas.style.transformOrigin = "top left";
+  zoomLabel.textContent = `${Math.round(canvasState.zoom * 100)}%`;
+}
+
 async function renderMoodboard() {
   const activeIdea = getActiveIdea();
   const selectedCharacters = canvasState.characters.filter((option) => option.selected).length;
@@ -312,8 +447,13 @@ async function renderMoodboard() {
 
 function renderAll() {
   renderConnectors();
+  renderLinks();
+  renderResearchInsights();
   renderIdeas();
+  renderComparison();
   renderCanvas();
+  renderAssets();
+  renderZoom();
   renderChat();
 }
 
@@ -358,6 +498,9 @@ async function createIdeasFromKnowledge() {
       connectors: canvasState.connectors,
       knowledge: source,
     });
+    if (!Array.isArray(response.ideas) || response.ideas.length === 0) {
+      throw new Error("No ideas returned");
+    }
     canvasState.ideas = response.ideas.map((idea, index) => ({
       ...idea,
       open: index === 0,
@@ -409,11 +552,47 @@ async function createIdeasFromKnowledge() {
     apiStatus.textContent = "Backend: local fallback";
   }
   canvasState.activeIdeaId = canvasState.ideas[0].id;
+  canvasState.compareIds = [canvasState.ideas[0].id];
   canvasState.chat.push({
     role: "assistant",
     text: "Generated four script directions from the Content knowledge dump. Pick one and send it to Canvas.",
   });
   renderAll();
+}
+
+async function understandKnowledge() {
+  try {
+    const response = await postJson("/v1/content/understand", {
+      knowledge: knowledgeInput.value,
+      links: canvasState.links,
+    });
+    canvasState.understanding = response.understanding;
+    apiStatus.textContent = "Backend: connected";
+  } catch {
+    const compact = knowledgeInput.value.replace(/\s+/g, " ").trim();
+    canvasState.understanding = {
+      ...canvasState.understanding,
+      links: [...canvasState.links],
+      summary:
+        compact.length > 0
+          ? `Local read: ${compact.slice(0, 180)}${compact.length > 180 ? "…" : ""}`
+          : canvasState.understanding.summary,
+    };
+    apiStatus.textContent = "Backend: local fallback";
+  }
+  renderResearchInsights();
+}
+
+async function hydrateConnectorCatalog() {
+  try {
+    const response = await globalThis.fetch(`${apiBaseUrl}/v1/connectors`);
+    if (!response.ok) return;
+    const payload = await response.json();
+    canvasState.connectorCatalog = payload.connectors ?? [];
+    renderConnectors();
+  } catch {
+    canvasState.connectorCatalog = [];
+  }
 }
 
 tabs.forEach((tab) => {
@@ -432,7 +611,35 @@ researchFile.addEventListener("change", () => {
   reader.readAsText(file);
 });
 
+addResearchLinkButton.addEventListener("click", () => {
+  const link = researchLinkInput.value.trim();
+  if (!link) return;
+  if (!canvasState.links.includes(link)) {
+    canvasState.links.push(link);
+  }
+  researchLinkInput.value = "";
+  renderLinks();
+});
+
+researchLinkInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    addResearchLinkButton.click();
+  }
+});
+
+researchLinkList.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-remove-link]");
+  if (!button) return;
+  canvasState.links = canvasState.links.filter((link) => link !== button.dataset.removeLink);
+  renderLinks();
+});
+
+understandButton.addEventListener("click", () => {
+  void understandKnowledge();
+});
+
 generateIdeasButton.addEventListener("click", () => {
+  void understandKnowledge();
   void createIdeasFromKnowledge();
 });
 
@@ -440,6 +647,7 @@ clearKnowledgeButton.addEventListener("click", () => {
   knowledgeInput.value = "";
   canvasState.ideas = [...baseIdeas];
   canvasState.activeIdeaId = "idea-founder-proof";
+  canvasState.compareIds = ["idea-founder-proof"];
   renderAll();
 });
 
@@ -447,6 +655,8 @@ ideaList.addEventListener("click", (event) => {
   const openButton = event.target.closest("[data-open-idea]");
   const selectButton = event.target.closest("[data-select-idea]");
   const sendButton = event.target.closest("[data-send-idea]");
+  const duplicateButton = event.target.closest("[data-duplicate-idea]");
+  const compareButton = event.target.closest("[data-compare-idea]");
 
   if (openButton) {
     const idea = canvasState.ideas.find((item) => item.id === openButton.dataset.openIdea);
@@ -459,6 +669,32 @@ ideaList.addEventListener("click", (event) => {
 
   if (selectButton) {
     selectIdea(selectButton.dataset.selectIdea);
+    return;
+  }
+
+  if (compareButton) {
+    const ideaId = compareButton.dataset.compareIdea;
+    canvasState.compareIds = canvasState.compareIds.includes(ideaId)
+      ? canvasState.compareIds.filter((id) => id !== ideaId)
+      : [...canvasState.compareIds, ideaId];
+    renderComparison();
+    return;
+  }
+
+  if (duplicateButton) {
+    const idea = canvasState.ideas.find(
+      (item) => item.id === duplicateButton.dataset.duplicateIdea,
+    );
+    if (!idea) return;
+    const copy = {
+      ...idea,
+      id: `${idea.id}-copy-${Date.now()}`,
+      open: true,
+      selected: false,
+      title: `${idea.title} remix`,
+    };
+    canvasState.ideas = [copy, ...canvasState.ideas];
+    renderIdeas();
     return;
   }
 
@@ -503,6 +739,16 @@ connectorList.addEventListener("click", (event) => {
   renderConnectors();
 });
 
+connectorCatalog.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-add-catalog-connector]");
+  if (!button) return;
+  const connector = button.dataset.addCatalogConnector;
+  if (!canvasState.connectors.includes(connector)) {
+    canvasState.connectors.push(connector);
+  }
+  renderConnectors();
+});
+
 topSendButton.addEventListener("click", () => {
   void sendIdeaToCanvas(canvasState.activeIdeaId);
 });
@@ -535,6 +781,16 @@ function createSheet(type) {
 
 document.querySelectorAll("[data-add-sheet]").forEach((button) => {
   button.addEventListener("click", () => createSheet(button.dataset.addSheet));
+});
+
+getElement("#zoomInButton").addEventListener("click", () => {
+  canvasState.zoom = Math.min(1.4, Number((canvasState.zoom + 0.1).toFixed(2)));
+  renderZoom();
+});
+
+getElement("#zoomOutButton").addEventListener("click", () => {
+  canvasState.zoom = Math.max(0.7, Number((canvasState.zoom - 0.1).toFixed(2)));
+  renderZoom();
 });
 
 getElement("[data-add-note]").addEventListener("click", () => {
@@ -590,6 +846,67 @@ flowCanvas.addEventListener("pointerdown", startNodeDrag);
 
 getElement("#generateMoodboardButton").addEventListener("click", () => {
   void renderMoodboard();
+});
+
+assetFile.addEventListener("change", async () => {
+  const files = [...(assetFile.files ?? [])];
+  const createdAssets = await Promise.all(
+    files.map(async (file) => {
+      try {
+        const payload = await postJson("/v1/assets", {
+          kind: file.type.startsWith("audio/") ? "audio" : "reference",
+          name: file.name,
+          source: "upload",
+          tags: ["asset", file.type || "file"],
+        });
+        apiStatus.textContent = "Backend: connected";
+        return payload.asset;
+      } catch {
+        apiStatus.textContent = "Backend: local fallback";
+        return {
+          asset_id: `asset-${Date.now()}-${file.name}`,
+          kind: file.type.startsWith("audio/") ? "audio" : "reference",
+          name: file.name,
+          source: "upload",
+          tags: ["asset", file.type || "file"],
+        };
+      }
+    }),
+  );
+  canvasState.assets = [...createdAssets, ...canvasState.assets];
+  renderAssets();
+});
+
+getElement("#saveProjectButton").addEventListener("click", async () => {
+  projectStatus.textContent = "Saving project…";
+  try {
+    const payload = await postJson("/v1/projects", {
+      asset_count: canvasState.assets.length,
+      canvas_node_count: document.querySelectorAll(".canvas-node").length,
+      connector_count: canvasState.connectors.length,
+      idea_count: canvasState.ideas.length,
+      project_id: canvasState.projectId,
+    });
+    projectStatus.textContent = `Saved ${new Date(payload.project.saved_at).toLocaleTimeString()}`;
+    apiStatus.textContent = "Backend: connected";
+  } catch {
+    projectStatus.textContent = `Saved locally ${new Date().toLocaleTimeString()}`;
+    apiStatus.textContent = "Backend: local fallback";
+  }
+});
+
+getElement("#exportPackageButton").addEventListener("click", async () => {
+  projectStatus.textContent = "Preparing export…";
+  try {
+    const payload = await postJson("/v1/exports", {
+      formats: ["json", "pdf", "png", "pptx", "figma"],
+    });
+    projectStatus.textContent = `Export ready: ${payload.export.formats.join(", ")}`;
+    apiStatus.textContent = "Backend: connected";
+  } catch {
+    projectStatus.textContent = "Export ready locally: JSON, PDF, PNG, PPTX, Figma";
+    apiStatus.textContent = "Backend: local fallback";
+  }
 });
 
 getElement("#downloadBoardButton").addEventListener("click", () => {

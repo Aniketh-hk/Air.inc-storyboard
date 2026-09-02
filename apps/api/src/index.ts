@@ -16,6 +16,8 @@ export type ScriptIdea = {
   hook: string;
   script: string;
   tone: string;
+  cta?: string;
+  beats?: string[];
 };
 
 export type SheetOption = {
@@ -42,6 +44,47 @@ export type MoodboardResponse = {
   summary: string;
   share_url: string;
   connectors: ConnectorName[];
+};
+
+export type ResearchUnderstanding = {
+  summary: string;
+  themes: string[];
+  audience: string[];
+  constraints: string[];
+  product_truths: string[];
+  creative_angles: string[];
+  tone: string[];
+  links: string[];
+};
+
+export type AssetRecord = {
+  asset_id: string;
+  name: string;
+  kind: "reference" | "character" | "scene" | "brand" | "audio" | "script" | "unknown";
+  tags: string[];
+  source: string;
+};
+
+export type ProjectSnapshot = {
+  project_id: string;
+  saved_at: string;
+  idea_count: number;
+  asset_count: number;
+  connector_count: number;
+  canvas_node_count: number;
+};
+
+export type ExportPackage = {
+  export_id: string;
+  formats: string[];
+  status: "ready";
+  manifest_url: string;
+};
+
+export type ConnectorDefinition = {
+  name: string;
+  role: "writing" | "research" | "voice" | "image" | "video" | "design" | "workspace";
+  status: "mocked" | "needs_credentials";
 };
 
 type JsonRecord = Record<string, unknown>;
@@ -87,6 +130,10 @@ function asStringArray(value: unknown): string[] {
   return value.filter((item): item is string => typeof item === "string");
 }
 
+function asNumber(value: unknown, fallback = 0): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
 function asSheetOptions(value: unknown): SheetOption[] {
   if (!Array.isArray(value)) return [];
   return value.map((item) => {
@@ -129,6 +176,8 @@ export function generateScriptIdeas(
       hook: `Make “${subject}” immediately understandable with a problem → proof → payoff structure.`,
       script: `Open with the most painful old workflow. Show the new system${connectorLine}. Land on one proof point, one emotional benefit, and a clean visual CTA.`,
       tone: "simple, confident",
+      cta: "Open the board and pick the direction.",
+      beats: ["Pain", "System", "Proof", "Payoff"],
     },
     {
       id: `idea-founder-${seed}`,
@@ -137,6 +186,8 @@ export function generateScriptIdeas(
       script:
         "Start with a direct founder line. Cut between raw research, draft scripts, and the generated board. End when the selected idea becomes a polished storyboard.",
       tone: "premium, human",
+      cta: "Turn raw context into a finished visual board.",
+      beats: ["Founder truth", "Workflow gap", "Board reveal", "Decision"],
     },
     {
       id: `idea-demo-${seed}`,
@@ -145,6 +196,8 @@ export function generateScriptIdeas(
       script:
         "The creator dumps context, opens three generated ideas, edits one line, sends it to Canvas, and watches character and scene sheets assemble into a final board.",
       tone: "fast, social",
+      cta: "Generate the storyboard from your knowledge dump.",
+      beats: ["Hook", "Demo", "Options", "Reveal"],
     },
     {
       id: `idea-cinematic-${seed}`,
@@ -153,8 +206,52 @@ export function generateScriptIdeas(
       script:
         "Use a quiet opening, textured references, slow transitions, and one repeating visual symbol. The storyboard lands as a moodboard that already feels shoot-ready.",
       tone: "visual, atmospheric",
+      cta: "Share the moodboard with the team.",
+      beats: ["Texture", "Motif", "Selection", "Moodboard"],
     },
   ];
+}
+
+export function understandResearch(
+  knowledge: string,
+  links: readonly string[] = [],
+): ResearchUnderstanding {
+  const compact = compactText(knowledge, 220);
+  const lower = knowledge.toLowerCase();
+  const themes = [
+    lower.includes("brand") ? "Brand memory" : "Creative clarity",
+    lower.includes("audience") ? "Audience context" : "Viewer-first storytelling",
+    lower.includes("workflow") || lower.includes("automation")
+      ? "Workflow transformation"
+      : "Visual proof",
+  ];
+  const constraints = [
+    lower.includes("budget") ? "Budget-sensitive generation" : "Keep provider costs visible",
+    lower.includes("deadline") ? "Fast review loop" : "Human approval before final generation",
+    "Reusable references for character and scene consistency",
+  ];
+
+  return {
+    audience: ["creative team", "brand owner", "reviewer"],
+    constraints,
+    creative_angles: [
+      "before/after workflow reveal",
+      "founder-led proof story",
+      "creator demo with rapid visual payoff",
+    ],
+    links: [...links],
+    product_truths: [
+      "Knowledge becomes script ideas",
+      "Selected ideas become visual boards",
+      "Canvas decisions should be reusable across videos",
+    ],
+    summary:
+      compact.length > 0
+        ? `The brief centers on ${compact}`
+        : "Add research, notes, scripts, links, or brand context to unlock sharper ideas.",
+    themes,
+    tone: ["simple", "premium", "cinematic", "operationally clear"],
+  };
 }
 
 export function expandCanvasFromIdea(idea: ScriptIdea): CanvasExpansion {
@@ -231,6 +328,56 @@ export function createMoodboardResponse(
   };
 }
 
+export function listConnectorDefinitions(): ConnectorDefinition[] {
+  return [
+    { name: "GPT", role: "writing", status: "needs_credentials" },
+    { name: "Gemini", role: "research", status: "needs_credentials" },
+    { name: "11 Labs", role: "voice", status: "needs_credentials" },
+    { name: "Runway", role: "video", status: "needs_credentials" },
+    { name: "Higgsfield", role: "video", status: "needs_credentials" },
+    { name: "Canva", role: "design", status: "needs_credentials" },
+    { name: "Figma", role: "design", status: "needs_credentials" },
+    { name: "Notion", role: "workspace", status: "mocked" },
+  ];
+}
+
+export function registerAsset(input: JsonRecord): AssetRecord {
+  const name = asString(input.name, "Untitled asset");
+  const kind = asString(input.kind, "unknown");
+  const safeKind = ["reference", "character", "scene", "brand", "audio", "script"].includes(kind)
+    ? (kind as AssetRecord["kind"])
+    : "unknown";
+
+  return {
+    asset_id: `asset-${randomUUID()}`,
+    kind: safeKind,
+    name,
+    source: asString(input.source, "manual"),
+    tags: asStringArray(input.tags).length > 0 ? asStringArray(input.tags) : [safeKind, "canvas"],
+  };
+}
+
+export function saveProjectSnapshot(input: JsonRecord): ProjectSnapshot {
+  return {
+    asset_count: asNumber(input.asset_count),
+    canvas_node_count: asNumber(input.canvas_node_count),
+    connector_count: asNumber(input.connector_count),
+    idea_count: asNumber(input.idea_count),
+    project_id: asString(input.project_id, `project-${randomUUID()}`),
+    saved_at: new Date().toISOString(),
+  };
+}
+
+export function createExportPackage(formats: readonly string[]): ExportPackage {
+  const exportId = `export-${randomUUID()}`;
+  return {
+    export_id: exportId,
+    formats: formats.length > 0 ? [...formats] : ["json", "pdf", "png"],
+    manifest_url: `https://cae.local/exports/${exportId}/manifest.json`,
+    status: "ready",
+  };
+}
+
 async function readJson(request: IncomingMessage): Promise<JsonRecord> {
   const chunks: Buffer[] = [];
   for await (const chunk of request) {
@@ -269,6 +416,19 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse)
       return;
     }
 
+    if (request.method === "GET" && url.pathname === "/v1/connectors") {
+      sendJson(response, 200, { connectors: listConnectorDefinitions() });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/v1/content/understand") {
+      const body = await readJson(request);
+      sendJson(response, 200, {
+        understanding: understandResearch(asString(body.knowledge, ""), asStringArray(body.links)),
+      });
+      return;
+    }
+
     if (request.method === "POST" && url.pathname === "/v1/content/ideas") {
       const body = await readJson(request);
       const ideas = generateScriptIdeas(
@@ -294,6 +454,24 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse)
         asSheetOptions(body.scenes),
       );
       sendJson(response, 202, responseBody);
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/v1/assets") {
+      const body = await readJson(request);
+      sendJson(response, 201, { asset: registerAsset(body) });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/v1/projects") {
+      const body = await readJson(request);
+      sendJson(response, 200, { project: saveProjectSnapshot(body) });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/v1/exports") {
+      const body = await readJson(request);
+      sendJson(response, 202, { export: createExportPackage(asStringArray(body.formats)) });
       return;
     }
 

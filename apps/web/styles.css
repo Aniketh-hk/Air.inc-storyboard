@@ -94,10 +94,17 @@ p {
 .idea-card-top,
 .idea-actions,
 .connector-input,
+.connector-catalog,
 .connector-pill,
+.catalog-pill,
+.link-row,
+.link-list,
+.link-chip,
 .canvas-topline,
+.canvas-controls,
 .export-actions,
-.chat-input {
+.chat-input,
+.download-stack {
   display: flex;
   align-items: center;
 }
@@ -390,6 +397,40 @@ h3 {
   color: #6a84dc;
 }
 
+.connector-catalog {
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.catalog-pill {
+  max-width: 100%;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid var(--line-soft);
+  border-radius: 999px;
+  background: #fbfbfb;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 720;
+}
+
+.catalog-pill:hover {
+  border-color: #c8d6ff;
+  background: #f6f8ff;
+  color: var(--ink);
+}
+
+.catalog-pill span {
+  overflow: hidden;
+  max-width: 88px;
+  color: var(--faint);
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .connector-input {
   gap: 8px;
 }
@@ -402,6 +443,7 @@ h3 {
 }
 
 .connector-input input,
+.link-row input,
 .chat-input input {
   width: 100%;
   height: 32px;
@@ -533,12 +575,13 @@ h3 {
 
 .content-layout {
   display: grid;
-  grid-template-columns: minmax(340px, 0.74fr) minmax(420px, 1fr);
+  grid-template-columns: minmax(320px, 0.78fr) minmax(260px, 0.64fr) minmax(380px, 1fr);
   gap: 16px;
   align-items: start;
 }
 
 .knowledge-panel,
+.understanding-panel,
 .ideas-panel,
 .chat-panel {
   padding: 14px;
@@ -571,6 +614,71 @@ textarea {
   resize: vertical;
 }
 
+.link-row {
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.link-list {
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 30px;
+  margin-bottom: 10px;
+}
+
+.link-chip,
+.empty-inline {
+  min-height: 26px;
+  padding: 0 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--faint);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.link-chip {
+  max-width: 100%;
+  color: var(--muted);
+}
+
+.link-chip span {
+  margin-left: 6px;
+  color: var(--faint);
+}
+
+.understanding-panel {
+  position: sticky;
+  top: calc(var(--topbar-height) + 16px);
+}
+
+.insight-grid {
+  display: grid;
+  gap: 9px;
+}
+
+.insight-card {
+  padding: 10px;
+  border: 1px solid var(--line-soft);
+  border-radius: 11px;
+  background: var(--surface);
+}
+
+.insight-card strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.insight-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.42;
+}
+
 textarea:focus,
 input:focus {
   border-color: #a7bcff;
@@ -580,6 +688,7 @@ input:focus {
 .knowledge-actions,
 .idea-actions,
 .export-actions {
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 10px;
 }
@@ -647,6 +756,44 @@ input:focus {
   margin-top: 12px;
 }
 
+.compare-tray {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.comparison-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.comparison-card {
+  padding: 10px;
+  border: 1px solid #dbe4ff;
+  border-radius: 11px;
+  background: #f6f8ff;
+}
+
+.comparison-card strong {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 13px;
+}
+
+.comparison-card span {
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.comparison-card p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .canvas-layout {
   display: grid;
   grid-template-columns: 44px minmax(520px, 1fr) 280px;
@@ -697,10 +844,24 @@ input:focus {
   margin-bottom: 12px;
 }
 
+.canvas-controls {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+#zoomLabel {
+  min-width: 46px;
+  color: var(--faint);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+
 .flow-canvas {
   position: relative;
-  width: 920px;
-  min-height: 620px;
+  width: 980px;
+  min-height: 700px;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -793,13 +954,16 @@ input:focus {
 
 .mix-node {
   top: 152px;
-  right: 34px;
+  right: auto;
+  left: 660px;
   width: 260px;
 }
 
 .moodboard-node {
-  right: 210px;
-  bottom: 30px;
+  top: 390px;
+  right: auto;
+  bottom: auto;
+  left: 610px;
   width: 330px;
 }
 
@@ -931,8 +1095,85 @@ input:focus {
 
 .chat-panel {
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto auto minmax(180px, 1fr) auto auto;
+  gap: 12px;
   min-height: 680px;
+}
+
+.asset-library {
+  display: grid;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.wide {
+  width: 100%;
+}
+
+.asset-grid {
+  display: grid;
+  gap: 8px;
+  max-height: 172px;
+  overflow-y: auto;
+}
+
+.asset-card {
+  display: grid;
+  grid-template-columns: 38px 1fr;
+  gap: 3px 9px;
+  padding: 8px;
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  background: white;
+}
+
+.asset-card strong {
+  align-self: end;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 760;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.asset-card small {
+  overflow: hidden;
+  color: var(--faint);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.asset-thumb {
+  grid-row: span 2;
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  background:
+    radial-gradient(circle at 58% 30%, rgb(255 255 255 / 75%) 0 16%, transparent 17%),
+    linear-gradient(135deg, #223354, #9db5c7);
+}
+
+.asset-thumb.audio {
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0 15%,
+      rgb(255 255 255 / 75%) 15% 22%,
+      transparent 22% 30%,
+      rgb(255 255 255 / 75%) 30% 39%,
+      transparent 39% 47%,
+      rgb(255 255 255 / 75%) 47% 56%,
+      transparent 56%
+    ),
+    linear-gradient(135deg, #4b2d63, #da7e75);
+}
+
+.asset-thumb.generated {
+  background:
+    radial-gradient(circle at 42% 44%, #f8f2e8 0 12%, transparent 13%),
+    linear-gradient(135deg, #034bff, #c49a62);
 }
 
 .chat-log {
@@ -963,7 +1204,14 @@ input:focus {
 
 .chat-input {
   gap: 8px;
+}
+
+.download-stack {
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
   padding-top: 12px;
+  border-top: 1px solid var(--line-soft);
 }
 
 .empty-state {
@@ -985,11 +1233,15 @@ input:focus {
     grid-template-columns: 1fr;
   }
 
+  .understanding-panel {
+    position: static;
+  }
+
   .asset-rail {
     display: none;
   }
 
   .flow-canvas {
-    min-width: 880px;
+    min-width: 980px;
   }
 }

@@ -55,6 +55,7 @@
             <h2 id="connectorTitle">Model + media stack</h2>
           </div>
           <div class="connector-list" id="connectorList" aria-live="polite"></div>
+          <div class="connector-catalog" id="connectorCatalog" aria-live="polite"></div>
           <div class="connector-input">
             <input id="connectorInput" type="text" placeholder="GPT, Gemini, 11 Labs..." />
             <button class="air-button neutral" id="addConnectorButton" type="button">Add</button>
@@ -115,10 +116,24 @@
                 </div>
 
                 <input id="researchFile" type="file" accept=".txt,.md,.rtf" hidden />
+                <div class="link-row">
+                  <input
+                    id="researchLinkInput"
+                    type="url"
+                    placeholder="Paste research/reference link"
+                  />
+                  <button class="air-button neutral" id="addResearchLinkButton" type="button">
+                    Add link
+                  </button>
+                </div>
+                <div class="link-list" id="researchLinkList" aria-live="polite"></div>
                 <textarea id="knowledgeInput" rows="12">
 Paste brand notes, research links, audience context, product details, campaign goals, references, constraints, and anything else you know. The engine turns this into multiple script directions you can open, edit, and send to Canvas.</textarea>
 
                 <div class="knowledge-actions">
+                  <button class="air-button neutral" id="understandButton" type="button">
+                    Understand research
+                  </button>
                   <button class="air-button primary" id="generateIdeasButton" type="button">
                     Generate script ideas
                   </button>
@@ -126,6 +141,14 @@ Paste brand notes, research links, audience context, product details, campaign g
                     Clear
                   </button>
                 </div>
+              </section>
+
+              <section class="understanding-panel" aria-labelledby="understandingTitle">
+                <div class="section-heading">
+                  <p class="eyebrow">Understanding</p>
+                  <h2 id="understandingTitle">Research summary</h2>
+                </div>
+                <div id="researchInsights" class="insight-grid" aria-live="polite"></div>
               </section>
 
               <section class="ideas-panel" aria-labelledby="ideasTitle">
@@ -137,6 +160,13 @@ Paste brand notes, research links, audience context, product details, campaign g
                   <span class="counter" id="ideaCount">0 ideas</span>
                 </div>
                 <div class="idea-list" id="ideaList" aria-live="polite"></div>
+                <div class="compare-tray">
+                  <div>
+                    <p class="eyebrow">Compare</p>
+                    <h2>Selected idea stack</h2>
+                  </div>
+                  <div id="comparisonList" class="comparison-list" aria-live="polite"></div>
+                </div>
               </section>
             </div>
           </section>
@@ -165,18 +195,26 @@ Paste brand notes, research links, audience context, product details, campaign g
                     <p class="eyebrow">Canvas</p>
                     <h2 id="canvasTitle">Storyboard builder</h2>
                   </div>
-                  <button class="air-button primary" id="generateMoodboardButton" type="button">
-                    Generate moodboard
-                  </button>
+                  <div class="canvas-controls">
+                    <button class="air-button neutral" id="zoomOutButton" type="button">−</button>
+                    <span id="zoomLabel">100%</span>
+                    <button class="air-button neutral" id="zoomInButton" type="button">+</button>
+                    <button class="air-button neutral" id="saveProjectButton" type="button">
+                      Save
+                    </button>
+                    <button class="air-button primary" id="generateMoodboardButton" type="button">
+                      Generate moodboard
+                    </button>
+                  </div>
                 </div>
 
                 <div class="flow-canvas">
-                  <svg class="connector-lines" viewBox="0 0 920 620" aria-hidden="true">
-                    <path d="M205 124 C300 124 300 92 390 92" />
-                    <path d="M205 144 C300 144 300 300 390 300" />
-                    <path d="M585 118 C650 118 650 210 710 210" />
-                    <path d="M585 322 C650 322 650 250 710 250" />
-                    <path d="M810 340 C810 408 650 470 505 470" />
+                  <svg class="connector-lines" viewBox="0 0 980 700" aria-hidden="true">
+                    <path d="M205 124 C295 124 295 92 390 92" />
+                    <path d="M205 144 C295 144 295 300 390 300" />
+                    <path d="M585 118 C620 118 620 210 660 210" />
+                    <path d="M585 322 C620 322 620 250 660 250" />
+                    <path d="M790 345 C790 392 720 430 665 430" />
                   </svg>
 
                   <article class="canvas-node idea-node" data-node-id="idea">
@@ -222,6 +260,16 @@ Paste brand notes, research links, audience context, product details, campaign g
               </section>
 
               <aside class="chat-panel" aria-label="Canvas chat">
+                <section class="asset-library" aria-labelledby="assetLibraryTitle">
+                  <div class="section-heading">
+                    <p class="eyebrow">Assets</p>
+                    <h2 id="assetLibraryTitle">Library</h2>
+                  </div>
+                  <input id="assetFile" type="file" multiple hidden />
+                  <label class="air-button neutral wide" for="assetFile">Upload assets</label>
+                  <div id="assetGrid" class="asset-grid" aria-live="polite"></div>
+                </section>
+
                 <div class="section-heading">
                   <p class="eyebrow">Assistant</p>
                   <h2>Canvas chat</h2>
@@ -235,6 +283,12 @@ Paste brand notes, research links, audience context, product details, campaign g
                   />
                   <button class="air-button primary" id="sendChatButton" type="button">Send</button>
                 </div>
+                <div class="download-stack">
+                  <button class="air-button neutral" id="exportPackageButton" type="button">
+                    Export package
+                  </button>
+                  <p class="api-status" id="projectStatus">Unsaved project</p>
+                </div>
               </aside>
             </div>
           </section>
@@ -242,6 +296,6 @@ Paste brand notes, research links, audience context, product details, campaign g
       </main>
     </div>
 
-    <script src="./app.js?v=20260901-ui2" type="module"></script>
+    <script src="./app.js?v=20260902-elements20" type="module"></script>
   </body>
 </html>
