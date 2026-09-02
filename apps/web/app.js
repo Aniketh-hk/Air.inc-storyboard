@@ -51,14 +51,21 @@ const canvasState = {
       tags: ["reference", "content"],
     },
   ],
-  connectors: ["GPT", "Gemini", "11 Labs"],
+  connectors: ["GPT"],
   connectorCatalog: [],
   compareIds: ["idea-founder-proof"],
   ideas: [...baseIdeas],
   activeIdeaId: "idea-founder-proof",
   activeView: "content",
-  links: [],
   projectId: "creative-engine-demo",
+  researchPack: {
+    input: "",
+    mode: "idea",
+    provider: "local",
+    research_id: "research-seed",
+    samples: [],
+    summary: "Paste a website or idea to pull script-ready research samples.",
+  },
   zoom: 1,
   understanding: {
     audience: ["creative team", "brand owner"],
@@ -170,9 +177,6 @@ const tabs = [...document.querySelectorAll("[data-view]")];
 const canvasStatus = getElement("#canvasStatus");
 const knowledgeInput = getElement("#knowledgeInput");
 const researchFile = getElement("#researchFile");
-const researchLinkInput = getElement("#researchLinkInput");
-const addResearchLinkButton = getElement("#addResearchLinkButton");
-const researchLinkList = getElement("#researchLinkList");
 const understandButton = getElement("#understandButton");
 const generateIdeasButton = getElement("#generateIdeasButton");
 const clearKnowledgeButton = getElement("#clearKnowledgeButton");
@@ -180,6 +184,9 @@ const ideaList = getElement("#ideaList");
 const ideaCount = getElement("#ideaCount");
 const comparisonList = getElement("#comparisonList");
 const researchInsights = getElement("#researchInsights");
+const researchStatus = getElement("#researchStatus");
+const sampleCount = getElement("#sampleCount");
+const sampleList = getElement("#sampleList");
 const connectorInput = getElement("#connectorInput");
 const connectorList = getElement("#connectorList");
 const connectorCatalog = getElement("#connectorCatalog");
@@ -245,22 +252,6 @@ function renderConnectors() {
     .join("");
 }
 
-function renderLinks() {
-  researchLinkList.innerHTML =
-    canvasState.links.length > 0
-      ? canvasState.links
-          .map(
-            (link) => `
-              <button class="link-chip" type="button" data-remove-link="${escapeHtml(link)}">
-                ${escapeHtml(link)}
-                <span>×</span>
-              </button>
-            `,
-          )
-          .join("")
-      : `<span class="empty-inline">No research links yet.</span>`;
-}
-
 function renderResearchInsights() {
   const understanding = canvasState.understanding;
   const rows = [
@@ -283,6 +274,31 @@ function renderResearchInsights() {
       `,
     )
     .join("");
+}
+
+function renderSamples() {
+  const samples = canvasState.researchPack.samples ?? [];
+  sampleCount.textContent = `${samples.length} samples`;
+  sampleList.innerHTML =
+    samples.length > 0
+      ? samples
+          .map((sample) => {
+            const kind = typeof sample.kind === "string" ? sample.kind : "sample";
+            const confidence = typeof sample.confidence === "string" ? sample.confidence : "medium";
+            return `
+              <article class="sample-card">
+                <div class="sample-card-top">
+                  <span>${escapeHtml(kind.replaceAll("_", " "))}</span>
+                  <small>${escapeHtml(confidence)} confidence</small>
+                </div>
+                <h3>${escapeHtml(sample.title)}</h3>
+                <p>${escapeHtml(sample.excerpt)}</p>
+                <footer>${escapeHtml(sample.signal)}</footer>
+              </article>
+            `;
+          })
+          .join("")
+      : `<div class="empty-state">Research a website or idea to pull script-ready samples.</div>`;
 }
 
 function renderIdeas() {
@@ -447,8 +463,8 @@ async function renderMoodboard() {
 
 function renderAll() {
   renderConnectors();
-  renderLinks();
   renderResearchInsights();
+  renderSamples();
   renderIdeas();
   renderComparison();
   renderCanvas();
@@ -493,13 +509,24 @@ async function createIdeasFromKnowledge() {
   const subject = compactSource.split(/[.?!]/)[0]?.slice(0, 96) || "the product story";
   const timestamp = Date.now();
 
+  if (!source) {
+    researchStatus.textContent = "Add a website URL or rough idea first.";
+    return;
+  }
+
+  researchStatus.textContent = "Generating scripts from research…";
+
   try {
-    const response = await postJson("/v1/content/ideas", {
+    const response = await postJson("/v1/content/scripts", {
       connectors: canvasState.connectors,
-      knowledge: source,
+      input: source,
     });
     if (!Array.isArray(response.ideas) || response.ideas.length === 0) {
       throw new Error("No ideas returned");
+    }
+    if (response.research) {
+      canvasState.researchPack = response.research;
+      canvasState.understanding = response.research.understanding;
     }
     canvasState.ideas = response.ideas.map((idea, index) => ({
       ...idea,
@@ -507,7 +534,13 @@ async function createIdeasFromKnowledge() {
       selected: index === 0,
     }));
     apiStatus.textContent = "System: connected";
+    researchStatus.textContent =
+      response.provider === "gpt"
+        ? "Scripts generated with GPT from pulled samples."
+        : "Scripts generated in local draft mode from pulled samples.";
   } catch {
+    canvasState.researchPack = createLocalResearchPack(source);
+    canvasState.understanding = canvasState.researchPack.understanding;
     canvasState.ideas = [
       {
         id: `idea-proof-${timestamp}`,
@@ -550,37 +583,98 @@ async function createIdeasFromKnowledge() {
       },
     ];
     apiStatus.textContent = "System: local draft mode";
+    researchStatus.textContent = "Scripts generated locally from the idea.";
   }
   canvasState.activeIdeaId = canvasState.ideas[0].id;
   canvasState.compareIds = [canvasState.ideas[0].id];
   canvasState.chat.push({
     role: "assistant",
-    text: "Generated four script directions from the Content knowledge dump. Pick one and send it to Canvas.",
+    text: "Generated four script directions from the source research. Pick one and send it to Canvas.",
   });
   renderAll();
 }
 
-async function understandKnowledge() {
-  try {
-    const response = await postJson("/v1/content/understand", {
-      knowledge: knowledgeInput.value,
-      links: canvasState.links,
-    });
-    canvasState.understanding = response.understanding;
-    apiStatus.textContent = "System: connected";
-  } catch {
-    const compact = knowledgeInput.value.replace(/\s+/g, " ").trim();
-    canvasState.understanding = {
-      ...canvasState.understanding,
-      links: [...canvasState.links],
+function createLocalResearchPack(source) {
+  const compact = source.replace(/\s+/g, " ").trim();
+  const subject = compact.split(/[.?!]/)[0]?.slice(0, 96) || "the product story";
+  const websiteSource = looksLikeWebsiteSource(source);
+  return {
+    input: source,
+    mode: websiteSource ? "website" : "idea",
+    provider: "local",
+    research_id: `research-local-${Date.now()}`,
+    samples: [
+      {
+        confidence: "medium",
+        excerpt: compact || "Add a website or idea to start research.",
+        id: `sample-local-${Date.now()}`,
+        kind: websiteSource ? "website" : "idea",
+        signal: "Primary source",
+        title: subject,
+      },
+      {
+        confidence: "medium",
+        excerpt:
+          "Hook the viewer with the pain point, show the old workflow, reveal the new path, then land one concrete proof beat.",
+        id: `sample-pattern-${Date.now()}`,
+        kind: "creative_pattern",
+        signal: "Script structure",
+        title: "Creative pattern",
+      },
+    ],
+    summary: "Local draft research pack created from the source input.",
+    understanding: {
+      audience: ["founders", "marketers", "creative team"],
+      constraints: ["Keep the flow simple", "Human approval before Canvas generation"],
+      creative_angles: ["problem-to-proof story", "workflow transformation", "creator demo"],
+      links: websiteSource ? [source] : [],
+      product_truths: ["Input becomes research", "Research becomes editable scripts"],
       summary:
         compact.length > 0
-          ? `Local read: ${compact.slice(0, 180)}${compact.length > 180 ? "…" : ""}`
-          : canvasState.understanding.summary,
-    };
-    apiStatus.textContent = "System: local draft mode";
+          ? `The source centers on ${compact.slice(0, 180)}${compact.length > 180 ? "…" : ""}`
+          : "Add a website or idea to start research.",
+      themes: ["Positioning", "Audience pain", "Creative proof"],
+      tone: ["clear", "premium", "direct"],
+    },
+  };
+}
+
+function looksLikeWebsiteSource(source) {
+  const trimmed = source.trim();
+  return /^https?:\/\//i.test(trimmed) || (!trimmed.includes(" ") && trimmed.includes("."));
+}
+
+async function researchSource() {
+  const source = knowledgeInput.value.trim();
+  if (!source) {
+    researchStatus.textContent = "Add a website URL or rough idea first.";
+    return null;
   }
-  renderResearchInsights();
+
+  researchStatus.textContent = looksLikeWebsiteSource(source)
+    ? "Pulling website samples…"
+    : "Building research samples from idea…";
+
+  try {
+    const response = await postJson("/v1/content/research", {
+      input: source,
+    });
+    canvasState.researchPack = response.research;
+    canvasState.understanding = response.research.understanding;
+    apiStatus.textContent = "System: connected";
+    researchStatus.textContent = `${response.research.samples.length} samples pulled from ${response.research.mode}.`;
+    renderResearchInsights();
+    renderSamples();
+    return response.research;
+  } catch {
+    canvasState.researchPack = createLocalResearchPack(source);
+    canvasState.understanding = canvasState.researchPack.understanding;
+    apiStatus.textContent = "System: local draft mode";
+    researchStatus.textContent = `${canvasState.researchPack.samples.length} local samples created.`;
+    renderResearchInsights();
+    renderSamples();
+    return canvasState.researchPack;
+  }
 }
 
 async function hydrateConnectorCatalog() {
@@ -606,40 +700,16 @@ researchFile.addEventListener("change", () => {
   const reader = new FileReader();
   reader.addEventListener("load", () => {
     knowledgeInput.value = String(reader.result ?? "");
-    void createIdeasFromKnowledge();
+    void researchSource();
   });
   reader.readAsText(file);
 });
 
-addResearchLinkButton.addEventListener("click", () => {
-  const link = researchLinkInput.value.trim();
-  if (!link) return;
-  if (!canvasState.links.includes(link)) {
-    canvasState.links.push(link);
-  }
-  researchLinkInput.value = "";
-  renderLinks();
-});
-
-researchLinkInput.addEventListener("keydown", (event) => {
-  if (event.key === "Enter") {
-    addResearchLinkButton.click();
-  }
-});
-
-researchLinkList.addEventListener("click", (event) => {
-  const button = event.target.closest("[data-remove-link]");
-  if (!button) return;
-  canvasState.links = canvasState.links.filter((link) => link !== button.dataset.removeLink);
-  renderLinks();
-});
-
 understandButton.addEventListener("click", () => {
-  void understandKnowledge();
+  void researchSource();
 });
 
 generateIdeasButton.addEventListener("click", () => {
-  void understandKnowledge();
   void createIdeasFromKnowledge();
 });
 
@@ -648,6 +718,10 @@ clearKnowledgeButton.addEventListener("click", () => {
   canvasState.ideas = [...baseIdeas];
   canvasState.activeIdeaId = "idea-founder-proof";
   canvasState.compareIds = ["idea-founder-proof"];
+  canvasState.researchPack = createLocalResearchPack("");
+  canvasState.researchPack.samples = [];
+  canvasState.understanding = canvasState.researchPack.understanding;
+  researchStatus.textContent = "Ready for a website URL or raw idea.";
   renderAll();
 });
 

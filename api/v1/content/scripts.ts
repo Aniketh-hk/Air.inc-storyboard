@@ -15,14 +15,15 @@ export default async function handler(request: RequestLike, response: ResponseLi
 
   try {
     const body = readBody(request);
-    const { ideas } = await generateContentScripts(
-      asString(body.input, asString(body.knowledge)),
-      asConnectors(body.connectors),
-      asConnectors(body.links),
-    );
-    response.status(200).json({
-      ideas,
-    });
+    response
+      .status(200)
+      .json(
+        await generateContentScripts(
+          asString(body.input, asString(body.knowledge)),
+          asConnectors(body.connectors),
+          asConnectors(body.links),
+        ),
+      );
   } catch (error) {
     response.status(400).json({
       error: "bad_request",

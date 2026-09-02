@@ -99,6 +99,7 @@ p {
 .knowledge-actions,
 .idea-card-top,
 .idea-actions,
+.sample-card-top,
 .connector-input,
 .connector-catalog,
 .connector-pill,
@@ -604,14 +605,15 @@ h3 {
 
 .content-layout {
   display: grid;
-  grid-template-columns: minmax(340px, 400px) minmax(0, 1fr);
-  grid-template-rows: auto auto;
+  grid-template-columns: minmax(350px, 420px) minmax(0, 1fr);
+  grid-template-rows: auto auto auto;
   gap: 16px;
   align-items: start;
 }
 
 .knowledge-panel,
 .understanding-panel,
+.samples-panel,
 .ideas-panel,
 .chat-panel {
   padding: 14px;
@@ -642,6 +644,21 @@ textarea {
   line-height: 1.48;
   outline: none;
   resize: vertical;
+}
+
+.source-hint {
+  margin: -2px 0 10px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.research-status {
+  min-height: 18px;
+  margin: 10px 0 0;
+  color: var(--faint);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .link-row {
@@ -691,7 +708,12 @@ textarea {
 
 .ideas-panel {
   grid-column: 2;
-  grid-row: 2;
+  grid-row: 2 / span 2;
+}
+
+.samples-panel {
+  grid-column: 1;
+  grid-row: 3;
 }
 
 .insight-grid {
@@ -749,6 +771,58 @@ input:focus {
   color: var(--faint);
   font-size: 12px;
   font-weight: 700;
+}
+
+.sample-list {
+  display: grid;
+  gap: 9px;
+}
+
+.sample-card {
+  padding: 11px;
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 1px 1px rgb(0 0 0 / 3%);
+}
+
+.sample-card-top {
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.sample-card-top span,
+.sample-card-top small {
+  color: var(--faint);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.sample-card h3 {
+  margin-bottom: 6px;
+}
+
+.sample-card p {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-height: 1.42;
+}
+
+.sample-card footer {
+  margin-top: 9px;
+  padding-top: 9px;
+  border-top: 1px solid var(--line-soft);
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: 800;
 }
 
 .idea-list {
@@ -1305,6 +1379,8 @@ input:focus {
   }
 
   .knowledge-panel,
+  .understanding-panel,
+  .samples-panel,
   .ideas-panel,
   .chat-panel {
     grid-column: auto;

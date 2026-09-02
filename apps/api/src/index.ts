@@ -87,7 +87,30 @@ export type ConnectorDefinition = {
   status: "mocked" | "needs_credentials";
 };
 
+export type ResearchSample = {
+  id: string;
+  title: string;
+  kind: "website" | "idea" | "positioning" | "audience" | "proof" | "creative_pattern";
+  source_url?: string;
+  excerpt: string;
+  signal: string;
+  confidence: "high" | "medium" | "low";
+};
+
+export type ContentResearchPack = {
+  research_id: string;
+  input: string;
+  mode: "website" | "idea";
+  provider: "gpt" | "local";
+  summary: string;
+  samples: ResearchSample[];
+  understanding: ResearchUnderstanding;
+  suggested_prompts: string[];
+};
+
 type JsonRecord = Record<string, unknown>;
+
+type FetchLike = (url: string, init?: RequestInit) => Promise<Response>;
 
 const defaultCorsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Idempotency-Key",
@@ -115,6 +138,11 @@ function compactText(value: string, maxLength = 120): string {
   return compact.length > maxLength ? `${compact.slice(0, maxLength - 1)}…` : compact;
 }
 
+function sentenceCase(value: string): string {
+  const compact = value.trim();
+  return compact.length > 0 ? `${compact[0]?.toUpperCase() ?? ""}${compact.slice(1)}` : "";
+}
+
 function asRecord(value: unknown): JsonRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value)
     ? (value as JsonRecord)
@@ -132,6 +160,148 @@ function asStringArray(value: unknown): string[] {
 
 function asNumber(value: unknown, fallback = 0): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function isWebsiteInput(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
+function normalizeWebsiteUrl(value: string): string | null {
+  const trimmed = value.trim();
+  const candidate =
+    /^https?:\/\//i.test(trimmed) || trimmed.includes(" ") || !trimmed.includes(".")
+      ? trimmed
+      : `https://${trimmed}`;
+  try {
+    const url = new URL(candidate);
+    if (!["http:", "https:"].includes(url.protocol)) return null;
+    if (
+      ["localhost", "127.0.0.1", "0.0.0.0"].includes(url.hostname) ||
+      url.hostname.startsWith("10.") ||
+      url.hostname.startsWith("192.168.") ||
+      /^172\.(1[6-9]|2\d|3[0-1])\./.test(url.hostname)
+    ) {
+      return null;
+    }
+    return url.href;
+  } catch {
+    return null;
+  }
+}
+
+function decodeHtmlEntities(value: string): string {
+  return value
+    .replaceAll("&amp;", "&")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#039;", "'")
+    .replaceAll("&apos;", "'")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&nbsp;", " ");
+}
+
+function extractHtmlAttribute(html: string, pattern: RegExp): string {
+  const match = html.match(pattern);
+  return compactText(decodeHtmlEntities(match?.[1] ?? ""), 160);
+}
+
+function stripHtml(html: string): string {
+  return decodeHtmlEntities(
+    html
+      .replace(/<script[\s\S]*?<\/script>/gi, " ")
+      .replace(/<style[\s\S]*?<\/style>/gi, " ")
+      .replace(/<noscript[\s\S]*?<\/noscript>/gi, " ")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " "),
+  ).trim();
+}
+
+function extractHeadings(html: string): string[] {
+  return [...html.matchAll(/<h[1-3][^>]*>([\s\S]*?)<\/h[1-3]>/gi)]
+    .map((match) => compactText(stripHtml(match[1] ?? ""), 120))
+    .filter((heading) => heading.length > 0)
+    .slice(0, 6);
+}
+
+function buildLocalSamples(input: string, websiteUrl: string | null, html = ""): ResearchSample[] {
+  const cleanInput = compactText(input, 240);
+  const title = html
+    ? extractHtmlAttribute(html, /<title[^>]*>([\s\S]*?)<\/title>/i) || "Website positioning"
+    : sentenceCase(compactText(input, 80)) || "Raw idea";
+  const description = html
+    ? extractHtmlAttribute(
+        html,
+        /<meta[^>]+(?:name|property)=["'](?:description|og:description)["'][^>]+content=["']([^"']+)["'][^>]*>/i,
+      )
+    : "";
+  const headings = html ? extractHeadings(html) : [];
+  const body = html ? compactText(stripHtml(html), 360) : cleanInput;
+  const source_url = websiteUrl ?? undefined;
+  const samples: ResearchSample[] = [
+    {
+      id: `sample-source-${randomUUID()}`,
+      kind: websiteUrl ? "website" : "idea",
+      ...(source_url ? { source_url } : {}),
+      title,
+      excerpt: description || body || cleanInput,
+      signal: websiteUrl ? "Primary website copy" : "Raw idea seed",
+      confidence: websiteUrl && html ? "high" : "medium",
+    },
+    {
+      id: `sample-positioning-${randomUUID()}`,
+      kind: "positioning",
+      ...(source_url ? { source_url } : {}),
+      title: "Positioning angle",
+      excerpt:
+        headings.length > 0
+          ? headings.join(" · ")
+          : `Turn “${cleanInput || "this idea"}” into a clear problem, proof, and transformation story.`,
+      signal: "Messaging hierarchy",
+      confidence: headings.length > 0 ? "high" : "medium",
+    },
+    {
+      id: `sample-proof-${randomUUID()}`,
+      kind: "proof",
+      ...(source_url ? { source_url } : {}),
+      title: "Proof to look for",
+      excerpt:
+        body ||
+        "Look for product truths, customer pain, differentiators, workflow moments, outcomes, and objections.",
+      signal: "Evidence pool for script beats",
+      confidence: body ? "medium" : "low",
+    },
+    {
+      id: `sample-pattern-${randomUUID()}`,
+      kind: "creative_pattern",
+      ...(source_url ? { source_url } : {}),
+      title: "Creative pattern",
+      excerpt:
+        "Recommended base: hook with the audience problem, show the current messy world, reveal the new workflow, prove the change, end with the desired action.",
+      signal: "Script structure",
+      confidence: "medium",
+    },
+  ];
+  return samples;
+}
+
+async function fetchWebsiteHtml(websiteUrl: string, fetcher: FetchLike): Promise<string> {
+  const response = await fetcher(websiteUrl, {
+    headers: {
+      Accept: "text/html,application/xhtml+xml",
+      "User-Agent": "CreativeAutomationEngine/0.1 research-preview",
+    },
+    redirect: "follow",
+  });
+  if (!response.ok) {
+    throw new Error(`Website fetch failed: ${response.status}`);
+  }
+  const text = await response.text();
+  return text.slice(0, 250_000);
 }
 
 function asSheetOptions(value: unknown): SheetOption[] {
@@ -156,6 +326,51 @@ function asIdea(value: unknown): ScriptIdea {
     script: asString(record.script, "Build a simple story around the strongest audience need."),
     tone: asString(record.tone, "clear, useful"),
   };
+}
+
+function asScriptIdeas(value: unknown): ScriptIdea[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((item, index) => {
+    const record = asRecord(item);
+    return {
+      beats: asStringArray(record.beats),
+      cta: asString(record.cta, "Send this direction to Canvas."),
+      hook: asString(record.hook, "A clear hook generated from the research."),
+      id: asString(record.id, `gpt-idea-${index + 1}`),
+      script: asString(record.script, "A generated script will appear here."),
+      title: asString(record.title, `Script direction ${index + 1}`),
+      tone: asString(record.tone, "clear, useful"),
+    };
+  });
+}
+
+function extractOpenAIText(payload: unknown): string {
+  const record = asRecord(payload);
+  if (typeof record.output_text === "string") return record.output_text;
+
+  const output = Array.isArray(record.output) ? record.output : [];
+  return output
+    .flatMap((item) => {
+      const itemRecord = asRecord(item);
+      const content = Array.isArray(itemRecord.content) ? itemRecord.content : [];
+      return content.map((contentItem) => {
+        const contentRecord = asRecord(contentItem);
+        return asString(contentRecord.text);
+      });
+    })
+    .filter((text) => text.length > 0)
+    .join("\n");
+}
+
+function parseJsonObject(value: string): JsonRecord {
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return {};
+  try {
+    return asRecord(JSON.parse(trimmed));
+  } catch {
+    const match = /\{[\s\S]*\}/.exec(trimmed);
+    return match ? asRecord(JSON.parse(match[0])) : {};
+  }
 }
 
 export function generateScriptIdeas(
@@ -251,6 +466,164 @@ export function understandResearch(
         : "Add research, notes, scripts, links, or brand context to unlock sharper ideas.",
     themes,
     tone: ["simple", "premium", "cinematic", "operationally clear"],
+  };
+}
+
+export async function buildContentResearch(
+  input: string,
+  links: readonly string[] = [],
+  fetcher: FetchLike = fetch,
+): Promise<ContentResearchPack> {
+  const source = input.trim();
+  const websiteUrl = normalizeWebsiteUrl(source);
+  const isWebsite = websiteUrl !== null && isWebsiteInput(websiteUrl);
+  let html = "";
+
+  if (isWebsite && websiteUrl) {
+    try {
+      html = await fetchWebsiteHtml(websiteUrl, fetcher);
+    } catch {
+      html = "";
+    }
+  }
+
+  const samples = buildLocalSamples(source, websiteUrl, html);
+  const researchText = [
+    source,
+    ...links,
+    ...samples.map((sample) => `${sample.title}: ${sample.excerpt}`),
+  ].join("\n");
+  const understanding = understandResearch(researchText, [
+    ...(websiteUrl ? [websiteUrl] : []),
+    ...links,
+  ]);
+
+  return {
+    input: source,
+    mode: isWebsite ? "website" : "idea",
+    provider: "local",
+    research_id: `research-${randomUUID()}`,
+    samples,
+    suggested_prompts: [
+      "Generate founder-led scripts from this research.",
+      "Find 5 visual hooks from the website positioning.",
+      "Turn the strongest proof points into a 45-second story.",
+    ],
+    summary:
+      isWebsite && websiteUrl
+        ? `Pulled website signals from ${websiteUrl} and converted them into script-ready samples.`
+        : `Converted the idea into script-ready research samples.`,
+    understanding,
+  };
+}
+
+async function generateGptScriptIdeas(
+  research: ContentResearchPack,
+  fetcher: FetchLike,
+): Promise<ScriptIdea[] | null> {
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  if (!apiKey) return null;
+
+  const response = await fetcher("https://api.openai.com/v1/responses", {
+    body: JSON.stringify({
+      input: [
+        {
+          content:
+            "You are the Content engine for a creative automation app. Generate four distinct short-form video script directions from the supplied website/idea research. Return JSON only.",
+          role: "developer",
+        },
+        {
+          content: JSON.stringify({
+            input: research.input,
+            samples: research.samples,
+            understanding: research.understanding,
+          }),
+          role: "user",
+        },
+      ],
+      model: process.env.OPENAI_MODEL ?? "gpt-5.6-terra",
+      store: false,
+      text: {
+        format: {
+          name: "creative_script_ideas",
+          schema: {
+            additionalProperties: false,
+            properties: {
+              ideas: {
+                items: {
+                  additionalProperties: false,
+                  properties: {
+                    beats: { items: { type: "string" }, type: "array" },
+                    cta: { type: "string" },
+                    hook: { type: "string" },
+                    id: { type: "string" },
+                    script: { type: "string" },
+                    title: { type: "string" },
+                    tone: { type: "string" },
+                  },
+                  required: ["id", "title", "hook", "script", "tone", "cta", "beats"],
+                  type: "object",
+                },
+                type: "array",
+              },
+            },
+            required: ["ideas"],
+            type: "object",
+          },
+          strict: true,
+          type: "json_schema",
+        },
+      },
+    }),
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    method: "POST",
+  });
+
+  if (!response.ok) {
+    throw new Error(`GPT request failed: ${response.status}`);
+  }
+
+  const payload: unknown = await response.json();
+  const parsed = parseJsonObject(extractOpenAIText(payload));
+  const ideas = asScriptIdeas(parsed.ideas);
+  return ideas.length > 0 ? ideas.slice(0, 4) : null;
+}
+
+export async function generateContentScripts(
+  input: string,
+  connectors: readonly ConnectorName[] = [],
+  links: readonly string[] = [],
+  fetcher: FetchLike = fetch,
+): Promise<{ ideas: ScriptIdea[]; provider: "gpt" | "local"; research: ContentResearchPack }> {
+  const research = await buildContentResearch(input, links, fetcher);
+
+  try {
+    const gptIdeas = await generateGptScriptIdeas(research, fetcher);
+    if (gptIdeas) {
+      return {
+        ideas: gptIdeas,
+        provider: "gpt",
+        research: { ...research, provider: "gpt" },
+      };
+    }
+  } catch {
+    // The content page remains usable without credentials, quota, or network access.
+  }
+
+  return {
+    ideas: generateScriptIdeas(
+      [
+        research.input,
+        research.summary,
+        ...research.samples.map((sample) => `${sample.title}: ${sample.excerpt}`),
+      ].join("\n"),
+      connectors,
+    ),
+    provider: "local",
+    research,
   };
 }
 
@@ -429,11 +802,37 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse)
       return;
     }
 
+    if (request.method === "POST" && url.pathname === "/v1/content/research") {
+      const body = await readJson(request);
+      sendJson(response, 200, {
+        research: await buildContentResearch(
+          asString(body.input, asString(body.knowledge, "")),
+          asStringArray(body.links),
+        ),
+      });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/v1/content/scripts") {
+      const body = await readJson(request);
+      sendJson(
+        response,
+        200,
+        await generateContentScripts(
+          asString(body.input, asString(body.knowledge, "")),
+          asStringArray(body.connectors),
+          asStringArray(body.links),
+        ),
+      );
+      return;
+    }
+
     if (request.method === "POST" && url.pathname === "/v1/content/ideas") {
       const body = await readJson(request);
-      const ideas = generateScriptIdeas(
-        asString(body.knowledge, ""),
+      const { ideas } = await generateContentScripts(
+        asString(body.input, asString(body.knowledge, "")),
         asStringArray(body.connectors),
+        asStringArray(body.links),
       );
       sendJson(response, 200, { ideas });
       return;

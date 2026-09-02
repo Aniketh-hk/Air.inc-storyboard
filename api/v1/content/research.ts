@@ -1,4 +1,4 @@
-import { generateContentScripts } from "../../../apps/api/src/index.js";
+import { buildContentResearch } from "../../../apps/api/src/index.js";
 import {
   asConnectors,
   asString,
@@ -15,13 +15,11 @@ export default async function handler(request: RequestLike, response: ResponseLi
 
   try {
     const body = readBody(request);
-    const { ideas } = await generateContentScripts(
-      asString(body.input, asString(body.knowledge)),
-      asConnectors(body.connectors),
-      asConnectors(body.links),
-    );
     response.status(200).json({
-      ideas,
+      research: await buildContentResearch(
+        asString(body.input, asString(body.knowledge)),
+        asConnectors(body.links),
+      ),
     });
   } catch (error) {
     response.status(400).json({
