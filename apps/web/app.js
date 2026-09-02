@@ -182,6 +182,8 @@ const contentView = getElement("#contentView");
 const canvasView = getElement("#canvasView");
 const tabs = [...document.querySelectorAll("[data-view]")];
 const canvasStatus = getElement("#canvasStatus");
+const boardTitle = getElement("#boardTitle");
+const boardDescription = getElement("#boardDescription");
 const knowledgeInput = getElement("#knowledgeInput");
 const researchFile = getElement("#researchFile");
 const understandButton = getElement("#understandButton");
@@ -234,6 +236,11 @@ function setView(view) {
     tab.setAttribute("aria-selected", String(isActive));
   });
   canvasStatus.textContent = view === "content" ? "Content active" : "Canvas active";
+  boardTitle.textContent = view === "content" ? "Content assistant" : "Storyboard canvas";
+  boardDescription.textContent =
+    view === "content"
+      ? "A clean research and scripting chat for turning one website or idea into selectable video directions."
+      : "Build the selected script into character sheets, scene sheets, mixes, and a moodboard.";
 }
 
 function renderConnectors() {

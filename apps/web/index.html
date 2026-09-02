@@ -91,8 +91,8 @@
 
           <div class="board-title-row">
             <div>
-              <h1 id="boardTitle">Script ideas and visual canvas</h1>
-              <p>
+              <h1 id="boardTitle">Content assistant</h1>
+              <p id="boardDescription">
                 One clean workflow: dump knowledge in Content, choose an idea, then build the
                 storyboard moodboard in Canvas.
               </p>
@@ -104,55 +104,61 @@
 
           <section class="view-panel active" id="contentView" aria-labelledby="contentTitle">
             <div class="content-studio">
-              <aside class="content-sidepanel" aria-label="Content research context">
+              <section class="content-chat-panel" aria-labelledby="contentTitle">
+                <div class="content-chat-header">
+                  <button class="model-picker" type="button">
+                    Content GPT
+                    <span>⌄</span>
+                  </button>
+                  <div>
+                    <h2 id="contentTitle">What should we research and script?</h2>
+                    <p class="content-subtitle">
+                      Paste a site or idea. I’ll pull samples, understand the angle, and write
+                      script options.
+                    </p>
+                  </div>
+                  <button class="air-button neutral" id="clearKnowledgeButton" type="button">
+                    New chat
+                  </button>
+                </div>
+
+                <div class="content-chat-log" id="contentChatLog" aria-live="polite"></div>
+
+                <div class="content-composer">
+                  <input id="researchFile" type="file" accept=".txt,.md,.rtf" hidden />
+                  <textarea
+                    id="knowledgeInput"
+                    rows="3"
+                    placeholder="Message Content GPT with a website, product idea, notes, or a brief…"
+                  ></textarea>
+                  <div class="knowledge-actions">
+                    <label class="air-button neutral" for="researchFile">＋</label>
+                    <button class="air-button neutral" id="understandButton" type="button">
+                      Research
+                    </button>
+                    <button class="air-button primary" id="generateIdeasButton" type="button">
+                      Generate
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              <aside class="content-artifact-sidebar" aria-label="Content artifacts">
                 <section class="content-brief-card">
-                  <p class="eyebrow">Content room</p>
-                  <h2>Research → Scripts</h2>
-                  <p>
-                    Add a website, raw idea, notes, or uploaded brief. The engine pulls useful
-                    signals first, then writes selectable script directions.
-                  </p>
+                  <div class="section-heading">
+                    <p class="eyebrow">Status</p>
+                    <h2>Content room</h2>
+                  </div>
                   <p class="research-status" id="researchStatus">
                     Ready for a website URL or raw idea.
                   </p>
                 </section>
 
-                <section class="samples-panel" aria-labelledby="samplesTitle">
-                  <div class="section-heading inline">
-                    <div>
-                      <p class="eyebrow">Samples</p>
-                      <h2 id="samplesTitle">Pulled references</h2>
-                    </div>
-                    <span class="counter" id="sampleCount">0</span>
-                  </div>
-                  <div id="sampleList" class="sample-list" aria-live="polite"></div>
-                </section>
-
-                <section class="understanding-panel" aria-labelledby="understandingTitle">
-                  <div class="section-heading">
-                    <p class="eyebrow">Understanding</p>
-                    <h2 id="understandingTitle">Research summary</h2>
-                  </div>
-                  <div id="researchInsights" class="insight-grid" aria-live="polite"></div>
-                </section>
-              </aside>
-
-              <section class="content-chat-panel" aria-labelledby="contentTitle">
-                <div class="content-chat-header">
-                  <div>
-                    <p class="eyebrow">Inference</p>
-                    <h2 id="contentTitle">Content assistant</h2>
-                  </div>
-                  <span class="status-pill">GPT base</span>
-                </div>
-
-                <div class="content-chat-log" id="contentChatLog" aria-live="polite"></div>
-
                 <section class="ideas-panel" aria-labelledby="ideasTitle">
                   <div class="section-heading inline">
                     <div>
                       <p class="eyebrow">Scripts</p>
-                      <h2 id="ideasTitle">Generated directions</h2>
+                      <h2 id="ideasTitle">Directions</h2>
                     </div>
                     <span class="counter" id="ideaCount">0 ideas</span>
                   </div>
@@ -166,27 +172,25 @@
                   </div>
                 </section>
 
-                <div class="content-composer">
-                  <input id="researchFile" type="file" accept=".txt,.md,.rtf" hidden />
-                  <textarea
-                    id="knowledgeInput"
-                    rows="4"
-                    placeholder="Paste a website URL or rough idea… e.g. air.inc, vitra.ai, or “a founder tool that turns research into storyboard moodboards”"
-                  ></textarea>
-                  <div class="knowledge-actions">
-                    <label class="air-button neutral" for="researchFile">Upload</label>
-                    <button class="air-button neutral" id="understandButton" type="button">
-                      Research
-                    </button>
-                    <button class="air-button primary" id="generateIdeasButton" type="button">
-                      Generate scripts
-                    </button>
-                    <button class="air-button neutral" id="clearKnowledgeButton" type="button">
-                      Clear
-                    </button>
+                <section class="samples-panel" aria-labelledby="samplesTitle">
+                  <div class="section-heading inline">
+                    <div>
+                      <p class="eyebrow">Samples</p>
+                      <h2 id="samplesTitle">References</h2>
+                    </div>
+                    <span class="counter" id="sampleCount">0</span>
                   </div>
-                </div>
-              </section>
+                  <div id="sampleList" class="sample-list" aria-live="polite"></div>
+                </section>
+
+                <section class="understanding-panel" aria-labelledby="understandingTitle">
+                  <div class="section-heading">
+                    <p class="eyebrow">Understanding</p>
+                    <h2 id="understandingTitle">Summary</h2>
+                  </div>
+                  <div id="researchInsights" class="insight-grid" aria-live="polite"></div>
+                </section>
+              </aside>
             </div>
           </section>
 
